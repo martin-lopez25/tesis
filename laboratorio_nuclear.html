@@ -1,0 +1,1108 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratorio Nuclear</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <style>
+        * {
+            border: 0;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --hue: 184;
+            --bg: hsl(var(--hue), 10%, 90%);
+            --fg: hsl(var(--hue), 66%, 24%);
+            --primary: hsl(var(--hue), 66%, 44%);
+            --gradient: linear-gradient(145deg, hsl(var(--hue), 10%, 85%), hsl(var(--hue), 10%, 100%));
+            font-size: 16px;
+        }
+        body,
+        button {
+            color: var(--fg);
+            font: 1em/1.5 "Nunito", sans-serif;
+        }
+        body {
+            background: var(--bg);
+            height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1.5em 0 0 0;
+            position: relative;
+        }
+        body:after {
+            content: "";
+            display: block;
+            height: 1.5em;
+            width: 100%;
+        }
+        .app {
+            background: hsl(var(--hue), 10%, 85%);
+            border-radius: 3em;
+            flex-direction: column;
+            padding: 2.25em;
+            width: 24.375em;
+            height: auto;
+            min-height: 52.75em;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .app__gradients {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+        }
+        .icon {
+            display: block;
+            margin: auto;
+            width: 1.5em;
+            height: 1.5em;
+        }
+        .icon circle,
+        .icon path {
+            fill: currentColor;
+            transition: fill 0.15s linear;
+        }
+        .icon ellipse,
+        .icon polygon {
+            stroke: currentColor;
+            transition: stroke 0.15s linear;
+        }
+        .icon .no-fill {
+            fill: none;
+            stroke: currentColor;
+        }
+        .icon--red path {
+            fill: hsl(3, 90%, 55%);
+        }
+        .icon--pulse {
+            animation:
+                bpm 1s linear,
+                pulse 0.75s 1s linear infinite;
+        }
+        .ring,
+        .sr-only {
+            position: absolute;
+        }
+        .ring {
+            display: block;
+            inset: 0;
+            width: 100%;
+            height: auto;
+        }
+        .ring-fill,
+        .ring-stroke {
+            stroke: url("#ring");
+        }
+        .ring-stroke {
+            animation-duration: 1s;
+            animation-timing-function: ease-in-out;
+        }
+        .ring-track {
+            stroke: hsl(var(--hue), 10%, 80%);
+        }
+        .sr-only {
+            clip: rect(1px, 1px, 1px, 1px);
+            overflow: hidden;
+            width: 1px;
+            height: 1px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5em;
+        }
+        .header__profile-btn,
+        .header__notes-btn {
+            width: 3em;
+            height: 3em;
+        }
+        .header__profile-btn {
+            border-radius: 1em;
+            box-shadow: 0 0 0 0.125em inset;
+        }
+        .header__notes-btn {
+            margin-inline-end: -1em;
+        }
+        .header__profile-btn:active,
+        .header__notes-btn:active {
+            transform: scale(0.9);
+        }
+        .header__profile-btn:focus {
+            box-shadow: 0 0 0 0.125em var(--primary) inset;
+        }
+        .header__profile-icon {
+            border-radius: 0.5em;
+            margin: auto;
+            width: 2em;
+            height: 2em;
+        }
+        .header__notes-btn:focus .icon path {
+            fill: var(--primary);
+        }
+        .header h1 {
+            font-size: 1rem;
+            text-align: center;
+            flex: 1;
+        }
+        .main__date-nav {
+            margin-bottom: 1.5em;
+        }
+        .main__date-arrow-btn,
+        .main__date-edit-btn {
+            height: 1.5em;
+        }
+        .main__date-arrow-btn {
+            width: 1.5em;
+        }
+        .main__date-arrow-btn:active .icon path,
+        .main__date-arrow-btn:focus .icon path {
+            fill: var(--primary);
+        }
+        .main__date {
+            text-transform: uppercase;
+        }
+        .main__date-edit-btn {
+            min-width: 1.5em;
+        }
+        .main__date-edit-btn:active,
+        .main__date-edit-btn:focus {
+            color: var(--primary);
+        }
+        .main__stat-blocks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 1.5em;
+            margin-bottom: 1.5em;
+        }
+        .main__stat-block {
+            background: var(--gradient);
+            border-radius: 1.5em;
+            box-shadow:
+                -0.75em -0.75em 2.25em hsl(0, 0%, 100%),
+                0.75em 0.75em 2.25em hsl(var(--hue), 5%, 65%);
+            padding: 0.75em;
+            text-align: center;
+            width: 100%;
+        }
+        .main__stat-block--lg {
+            grid-column: 1 / 4;
+            padding: 1.5em;
+        }
+        .main__stat-rows,
+        .main__stat-row {
+            margin-bottom: 1.5em;
+        }
+        .main__stat-row {
+            align-items: center;
+        }
+        .main__stat-graph {
+            margin: 0 auto 0.75em auto;
+            position: relative;
+            width: 3.75em;
+            height: 3.75em;
+        }
+        .main__stat-graph .main__stat-detail {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: absolute;
+            inset: 0;
+        }
+        .main__stat-block--lg .main__stat-graph {
+            margin: auto;
+            width: 11.25em;
+            height: 11.25em;
+        }
+        .main__stat-block--lg .icon {
+            margin: 0 auto;
+            width: 2.25em;
+            height: 2.25em;
+        }
+        .main__stat-row .main__stat-graph {
+            background: var(--gradient);
+            border-radius: 1em;
+            box-shadow:
+                -0.75em -0.75em 2.25em hsl(0, 0%, 100%),
+                0.75em 0.75em 2.25em hsl(var(--hue), 5%, 65%);
+            margin: 0;
+            margin-inline-end: 1.5em;
+        }
+        .main__stat-value,
+        .main__stat-unit {
+            display: block;
+        }
+        .main__stat-value {
+            font-size: 1.25em;
+            line-height: 1.2;
+        }
+        .main__stat-block--lg .main__stat-value {
+            font-size: 2em;
+            line-height: 1.5;
+        }
+        .main__stat-unit,
+        .main__stat-subtext {
+            font-weight: 300;
+        }
+        .main__stat-subtext {
+            color: hsl(var(--hue), 10%, 30%);
+        }
+        .footer {
+            margin-top: auto;
+        }
+        .footer__nav-btn {
+            background: var(--gradient);
+            border-radius: 50%;
+            box-shadow:
+                1em 1em 2em hsl(var(--hue), 5%, 65%),
+                -1em -1em 2em hsl(0, 0%, 100%);
+            width: 3em;
+            height: 3em;
+        }
+        .footer__nav-btn:active {
+            box-shadow:
+                0.75em 0.75em 1.5em hsl(var(--hue), 5%, 65%),
+                -0.75em -0.75em 1.5em hsl(0, 0%, 100%);
+            transform: scale(0.9);
+        }
+        .footer__nav-btn:focus .icon circle,
+        .footer__nav-btn:focus .icon path {
+            fill: var(--primary);
+        }
+        body.dark {
+            --bg: hsl(var(--hue), 10%, 10%);
+            --fg: hsl(var(--hue), 66%, 94%);
+            --primary: hsl(var(--hue), 66%, 44%);
+            --gradient: linear-gradient(145deg, hsl(var(--hue), 10%, 15%), hsl(var(--hue), 10%, 30%));
+        }
+        body.dark .app {
+            background: hsl(var(--hue), 10%, 20%);
+        }
+        body.dark .icon--red path {
+            fill: hsl(3, 90%, 65%);
+        }
+        body.dark .ring-track {
+            stroke: hsl(var(--hue), 10%, 30%);
+        }
+        body.dark .main__stat-block,
+        body.dark .main__stat-row .main__stat-graph {
+            box-shadow:
+                -0.75em -0.75em 2.25em hsl(var(--hue), 10%, 30%),
+                0.75em 0.75em 2.25em hsl(var(--hue), 5%, 5%);
+        }
+        body.dark .main__stat-subtext {
+            color: hsl(var(--hue), 10%, 70%);
+        }
+        body.dark .footer__nav-btn {
+            box-shadow:
+                -1em -1em 2em hsl(var(--hue), 10%, 30%),
+                1em 1em 2em hsl(var(--hue), 5%, 5%);
+        }
+        body.dark .footer__nav-btn:active {
+            box-shadow:
+                -0.75em -0.75em 1.5em hsl(var(--hue), 10%, 30%),
+                0.75em 0.75em 1.5em hsl(var(--hue), 5%, 5%);
+        }
+        @keyframes statFill {
+            from { color: var(--fg); }
+            to { color: hsl(var(--hue), 66%, 94%); }
+        }
+        @keyframes ringFill {
+            from { r: 82px; stroke-width: 16; }
+            to { r: 45px; stroke-width: 90; }
+        }
+        @keyframes stepCount {
+            from { stroke-dashoffset: 515.22; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes cals {
+            from { stroke-dashoffset: 163.36; }
+            to { stroke-dashoffset: 12.25; }
+        }
+        @keyframes miles {
+            from { stroke-dashoffset: 163.36; }
+            to { stroke-dashoffset: 35.39; }
+        }
+        @keyframes mins {
+            from { stroke-dashoffset: 163.36; }
+            to { stroke-dashoffset: 65.34; }
+        }
+        @keyframes bpm {
+            from { transform: scale(0); }
+            37.5% { transform: scale(1.2); }
+            75%, to { transform: scale(1); }
+        }
+        @keyframes stepHrs {
+            from { stroke-dashoffset: 131.95; }
+            to { stroke-dashoffset: 52.78; }
+        }
+        @keyframes pulse {
+            from, 75%, to { transform: scale(1); }
+            25% { transform: scale(0.9); }
+            50% { transform: scale(1.2); }
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 0.5em;
+            margin-bottom: 1.5em;
+            justify-content: center;
+        }
+        .nav-btn {
+            background: var(--gradient);
+            border-radius: 1.5em;
+            padding: 0.5em 1em;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: -0.5em -0.5em 1.5em hsl(0, 0%, 100%), 0.5em 0.5em 1.5em hsl(var(--hue), 5%, 65%);
+        }
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background: var(--gradient);
+            border-radius: 1.5em;
+            padding: 1em;
+            margin-bottom: 1em;
+            box-shadow: -0.75em -0.75em 2.25em hsl(0, 0%, 100%), 0.75em 0.75em 2.25em hsl(var(--hue), 5%, 65%);
+        }
+        .card-title {
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            color: var(--primary);
+        }
+        .input-group {
+            margin-bottom: 0.8em;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 0.2em;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.4em 0.6em;
+            background: hsl(var(--hue), 10%, 85%);
+            border-radius: 1em;
+            font-family: "Nunito", sans-serif;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        button {
+            width: 100%;
+            padding: 0.5em;
+            background: var(--gradient);
+            border-radius: 1.5em;
+            font-family: "Nunito", sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.3em;
+            box-shadow: -0.5em -0.5em 1.5em hsl(0, 0%, 100%), 0.5em 0.5em 1.5em hsl(var(--hue), 5%, 65%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .resultado {
+            margin-top: 0.5em;
+            padding: 0.5em;
+            background: hsl(var(--hue), 10%, 80%);
+            border-radius: 1em;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+        .graph-container {
+            background: var(--gradient);
+            border-radius: 1.5em;
+            padding: 1em;
+            margin-bottom: 1em;
+            box-shadow: -0.75em -0.75em 2.25em hsl(0, 0%, 100%), 0.75em 0.75em 2.25em hsl(var(--hue), 5%, 65%);
+        }
+        .graph-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            text-align: center;
+        }
+        .simulation-canvas {
+            width: 100%;
+            height: 200px;
+            background: hsl(var(--hue), 10%, 85%);
+            border-radius: 1em;
+        }
+        .info-text {
+            background: hsl(var(--hue), 10%, 80%);
+            padding: 0.8em;
+            border-radius: 1em;
+            margin-bottom: 1em;
+            font-size: 0.7rem;
+            border-left: 3px solid var(--primary);
+        }
+        .formula {
+            background: hsl(var(--hue), 10%, 80%);
+            padding: 0.8em;
+            border-radius: 1em;
+            margin: 0.8em 0;
+            font-size: 0.7rem;
+            overflow-x: auto;
+        }
+        .nucleido-selector {
+            display: flex;
+            gap: 0.5em;
+            margin-bottom: 0.8em;
+            flex-wrap: wrap;
+        }
+        .nucleido-btn {
+            flex: 1;
+            padding: 0.3em;
+            font-size: 0.7rem;
+            margin: 0;
+            background: hsl(var(--hue), 10%, 85%);
+        }
+        .nucleido-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .flex-buttons {
+            display: flex;
+            gap: 0.5em;
+        }
+        .flex-buttons button {
+            flex: 1;
+        }
+        .scene {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .images {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .switch {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            cursor: pointer;
+        }
+        .switch input {
+            position: absolute;
+            opacity: 0;
+        }
+        .track {
+            position: relative;
+            width: 72px;
+            height: 24px;
+            background: #2c2c2c;
+            border-radius: 60px;
+            transition: 0.3s;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+        }
+        body.dark .track {
+            background: #1a1a1a;
+        }
+        .thumb {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            width: 36px;
+            height: 36px;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        input:checked + .track .thumb {
+            left: calc(100% - 36px + 6px);
+        }
+        .lightsaber {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
+        }
+        .lightsaber .light {
+            width: 20px;
+            height: 3px;
+            background: #00ff9c;
+            border-radius: 4px;
+            box-shadow: 0 0 4px #00ff9c;
+        }
+        .lightsaber .dark {
+            width: 20px;
+            height: 3px;
+            background: #ff3366;
+            border-radius: 4px;
+            box-shadow: 0 0 4px #ff3366;
+        }
+        .lightsaber .grip {
+            width: 22px;
+            height: 10px;
+            background: #555;
+            border-radius: 4px;
+        }
+        .circle {
+            width: 36px;
+            height: 36px;
+            background: #1a1a1a;
+            border-radius: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        body.dark .circle {
+            background: #2a2a2a;
+        }
+        .sub-circle {
+            width: 28px;
+            height: 28px;
+            background: #2c2c2c;
+            border-radius: 100%;
+        }
+        body.dark .sub-circle {
+            background: #3a3a3a;
+        }
+        .side {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+            transform: scale(0);
+        }
+        input:checked + .track .thumb .dark-side {
+            transform: scale(1);
+        }
+        input:not(:checked) + .track .thumb .light-side {
+            transform: scale(1);
+        }
+        .light-side .top {
+            position: absolute;
+            top: 4px;
+            display: flex;
+            gap: 4px;
+        }
+        .light-side .top .left,
+        .light-side .top .right {
+            width: 3px;
+            height: 3px;
+            background: #ffcc00;
+            border-radius: 100%;
+        }
+        .light-side .center {
+            display: flex;
+            gap: 2px;
+        }
+        .light-side .center div {
+            width: 2px;
+            height: 10px;
+            background: #ffcc00;
+            border-radius: 2px;
+        }
+        .light-side .bottom {
+            position: absolute;
+            bottom: 4px;
+        }
+        .light-side .bottom .line {
+            width: 12px;
+            height: 2px;
+            background: #ffcc00;
+            border-radius: 2px;
+        }
+        .dark-side .circle {
+            background: #ff3366;
+        }
+        .dark-side .sub-circle {
+            background: #cc0033;
+        }
+        .app::-webkit-scrollbar {
+            width: 6px;
+        }
+        .app::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .app::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="app__gradients">
+        <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+            <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="hsl(184, 66%, 44%)" />
+                <stop offset="100%" stop-color="hsl(184, 66%, 74%)" />
+            </linearGradient>
+        </svg>
+    </div>
+
+    <div class="header">
+        <button class="header__profile-btn" aria-label="Perfil">
+            <svg class="icon header__profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M5 20v-2a7 7 0 0 1 14 0v2" />
+            </svg>
+        </button>
+        <h1>Laboratorio Nuclear</h1>
+        <div class="scene">
+            <div class="images">
+                <img src="https://assets.codepen.io/907471/darkside.svg?v42" class="dark">
+                <img src="https://assets.codepen.io/907471/lightside.svg?v42" class="light">
+            </div>
+            <label class="switch" id="switch" aria-label="Switch">
+                <input type="checkbox" id="themeToggle">
+                <div class="track">
+                    <div class="lightsaber">
+                        <div class="light"></div>
+                        <div class="grip"></div>
+                        <div class="dark"></div>
+                    </div>
+                    <div class="thumb">
+                        <div class="side dark-side">
+                            <div class="circle">
+                                <div class="sub-circle"></div>
+                            </div>
+                        </div>
+                        <div class="side light-side">
+                            <div class="circle">
+                                <div class="sub-circle"></div>
+                            </div>
+                            <div class="top">
+                                <div class="left"></div>
+                                <div class="right"></div>
+                            </div>
+                            <div class="center">
+                                <div class="item-1"></div>
+                                <div class="item-2"></div>
+                                <div class="item-3"></div>
+                                <div class="item-4"></div>
+                                <div class="item-5"></div>
+                            </div>
+                            <div class="bottom">
+                                <div class="line"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="main__stat-blocks">
+        <div class="main__stat-block">
+            <div class="main__stat-graph">
+                <svg class="ring" viewBox="0 0 120 120">
+                    <circle class="ring-track" cx="60" cy="60" r="45" fill="none" stroke-width="8" />
+                    <circle class="ring-stroke ring-stroke--steps" cx="60" cy="60" r="45" fill="none" stroke-width="8" stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" />
+                </svg>
+                <div class="main__stat-detail">
+                    <span class="main__stat-value" id="statNeutrones">0</span>
+                    <span class="main__stat-unit">n</span>
+                </div>
+            </div>
+            <span class="main__stat-subtext">Neutrones</span>
+        </div>
+        <div class="main__stat-block">
+            <div class="main__stat-graph">
+                <svg class="ring" viewBox="0 0 120 120">
+                    <circle class="ring-track" cx="60" cy="60" r="45" fill="none" stroke-width="8" />
+                    <circle class="ring-stroke ring-stroke--cals" cx="60" cy="60" r="45" fill="none" stroke-width="8" stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" />
+                </svg>
+                <div class="main__stat-detail">
+                    <span class="main__stat-value" id="statFisiones">0</span>
+                    <span class="main__stat-unit">fis</span>
+                </div>
+            </div>
+            <span class="main__stat-subtext">Fisiones</span>
+        </div>
+        <div class="main__stat-block">
+            <div class="main__stat-graph">
+                <svg class="ring" viewBox="0 0 120 120">
+                    <circle class="ring-track" cx="60" cy="60" r="45" fill="none" stroke-width="8" />
+                    <circle class="ring-stroke ring-stroke--miles" cx="60" cy="60" r="45" fill="none" stroke-width="8" stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-linecap="round" />
+                </svg>
+                <div class="main__stat-detail">
+                    <span class="main__stat-value" id="statEnergia">0</span>
+                    <span class="main__stat-unit">MeV</span>
+                </div>
+            </div>
+            <span class="main__stat-subtext">Energia</span>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="nav-btn active" onclick="showTab('montecarlo')">Monte Carlo</button>
+        <button class="nav-btn" onclick="showTab('dispersión')">Dispersion</button>
+        <button class="nav-btn" onclick="showTab('fision')">Fision 3D</button>
+    </div>
+
+    <div id="montecarlo" class="tab-content active">
+        <div class="info-text">
+            <strong>Metodo Monte Carlo</strong><br>
+            Simulacion de poblacion de neutrones usando numeros aleatorios.
+        </div>
+        <div class="card">
+            <div class="card-title">Parametros</div>
+            <div class="input-group">
+                <label>Probabilidad (p)</label>
+                <input type="number" id="prob_p" value="0.5" step="0.05" min="0" max="1">
+            </div>
+            <div class="input-group">
+                <label>Neutrones iniciales (n0)</label>
+                <input type="number" id="neutrones_n0" value="100">
+            </div>
+            <div class="input-group">
+                <label>Generaciones</label>
+                <input type="number" id="generaciones" value="50" min="10" max="100">
+            </div>
+            <button class="btn-primary" onclick="simularMonteCarlo()">Ejecutar</button>
+            <div id="resultado_mc" class="resultado">Listo</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Interpretacion</div>
+            <div class="info-text" style="margin:0">
+                <strong>Factor k:</strong><br>
+                k < 1: Subcritico | k = 1: Critico | k > 1: Supercritico
+            </div>
+        </div>
+        <div class="graph-container">
+            <div class="graph-title">Evolucion de la Poblacion</div>
+            <div id="grafica_mc" style="height: 250px;"></div>
+        </div>
+        <div class="graph-container">
+            <div class="graph-title">Visualizacion</div>
+            <canvas id="mcCanvas" class="simulation-canvas"></canvas>
+        </div>
+    </div>
+
+    <div id="dispersión" class="tab-content">
+        <div class="info-text">
+            <strong>Dispersion Elastica de Neutrones</strong><br>
+            Energia final vs angulo de dispersion (0° a 360°)
+        </div>
+        <div class="formula">
+            $$E_l' = \frac{1}{2}E_l[(1+\alpha)+(1-\alpha)\cos\theta_C]$$
+            $$\alpha = \left(\frac{A-1}{A+1}\right)^2$$
+        </div>
+        <div class="card">
+            <div class="card-title">Parametros</div>
+            <div class="input-group">
+                <label>Energia inicial (MeV)</label>
+                <input type="number" id="energia_inicial_elastica" value="1.0" step="0.1">
+            </div>
+            <div class="input-group">
+                <label>Nucleidos:</label>
+                <div class="nucleido-selector" id="nucleidosList">
+                    <button type="button" class="nucleido-btn" data-a="1" data-name="H-1">H-1</button>
+                    <button type="button" class="nucleido-btn" data-a="12" data-name="C-12">C-12</button>
+                    <button type="button" class="nucleido-btn" data-a="23" data-name="Na-23">Na-23</button>
+                    <button type="button" class="nucleido-btn" data-a="238" data-name="U-238">U-238</button>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="agregarNucleido()">Agregar</button>
+            <div class="flex-buttons">
+                <button onclick="limpiarGrafica()">Limpiar</button>
+            </div>
+            <div id="nucleidos_activos" class="resultado">Activos: Ninguno</div>
+        </div>
+        <div class="graph-container">
+            <div class="graph-title">Energia vs Angulo (0° a 360°)</div>
+            <div id="grafica_elastica" style="height: 300px;"></div>
+        </div>
+    </div>
+
+    <div id="fision" class="tab-content">
+        <div class="info-text">
+            <strong>Fision Nuclear 3D</strong><br>
+            n + U-235 -> Ba-141 + Kr-92 + 2-3 n + 200 MeV
+        </div>
+        <div class="card">
+            <div class="card-title">Simulacion 3D</div>
+            <button class="btn-primary" onclick="abrirFision()">Abrir Simulacion</button>
+            <div class="info-text" style="margin-top:0.8em">
+                <strong>Controles:</strong><br>
+                Disparar neutron | Reaccion en cadena | Reiniciar<br>
+                Arrastrar: rotar | Scroll: zoom
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let nucleidosActivos = [];
+
+    const themeToggle = document.getElementById('themeToggle');
+
+    function toggleTheme() {
+        if (themeToggle.checked) {
+            document.body.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.body.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+        actualizarGraficaElastica();
+        simularMonteCarlo();
+    }
+
+    themeToggle.addEventListener('change', toggleTheme);
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        themeToggle.checked = true;
+    }
+
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        if (tabId === 'montecarlo') {
+            simularMonteCarlo();
+        }
+    }
+
+    function energiaFinalElastica(E, A, theta) {
+        const alpha = Math.pow((A - 1) / (A + 1), 2);
+        const thetaRad = theta * Math.PI / 180;
+        return 0.5 * E * ((1 + alpha) + (1 - alpha) * Math.cos(thetaRad));
+    }
+
+    function agregarNucleido() {
+        const activeBtn = document.querySelector('.nucleido-btn.active');
+        if (!activeBtn) {
+            alert('Seleccione un nucleido');
+            return;
+        }
+
+        const A = parseFloat(activeBtn.dataset.a);
+        const name = activeBtn.dataset.name;
+        const E = parseFloat(document.getElementById('energia_inicial_elastica').value);
+
+        if (nucleidosActivos.some(n => n.A === A)) {
+            alert(name + ' ya esta en la grafica');
+            return;
+        }
+
+        nucleidosActivos.push({ A, name, E });
+        actualizarListaNucleidos();
+        actualizarGraficaElastica();
+    }
+
+    function actualizarListaNucleidos() {
+        const container = document.getElementById('nucleidos_activos');
+        if (nucleidosActivos.length === 0) {
+            container.innerHTML = 'Activos: Ninguno';
+            return;
+        }
+        container.innerHTML = 'Activos: ' + nucleidosActivos.map(n => n.name).join(', ');
+    }
+
+    function limpiarGrafica() {
+        nucleidosActivos = [];
+        actualizarListaNucleidos();
+        actualizarGraficaElastica();
+    }
+
+    function actualizarGraficaElastica() {
+        const theta_vals = Array.from({length: 361}, (_, i) => i);
+
+        const traces = nucleidosActivos.map((nucleido, idx) => {
+            const energy_ratio = theta_vals.map(theta => {
+                const E_final = energiaFinalElastica(nucleido.E, nucleido.A, theta);
+                return E_final / nucleido.E;
+            });
+
+            const colors = ['#00ff9c', '#667eea', '#ff6600', '#ff44cc'];
+
+            return {
+                x: theta_vals,
+                y: energy_ratio,
+                mode: 'lines',
+                name: nucleido.name + ' (A=' + nucleido.A + ')',
+                line: { color: colors[idx % colors.length], width: 2 }
+            };
+        });
+
+        const isDark = document.body.classList.contains('dark');
+        const fontColor = isDark ? '#fff' : '#2c3e4f';
+
+        const layout = {
+            template: 'plotly_dark',
+            title: { text: 'Energia vs Angulo de Dispersion', font: { size: 10, color: fontColor } },
+            xaxis: { title: "Angulo (grados)", range: [0, 360], dtick: 45, tickfont: { color: fontColor }, titlefont: { color: fontColor } },
+            yaxis: { title: "E'/E0", range: [0, 1.05], tickfont: { color: fontColor }, titlefont: { color: fontColor } },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            legend: { font: { size: 8, color: fontColor } }
+        };
+
+        Plotly.newPlot('grafica_elastica', traces, layout, { responsive: true });
+    }
+
+    function monteCarlo(p, n0, pasos) {
+        let neutrones = [n0];
+        for (let step = 0; step < pasos; step++) {
+            let nuevos = 0;
+            for (let i = 0; i < neutrones[neutrones.length-1]; i++) {
+                if (Math.random() < p) {
+                    nuevos += Math.floor(Math.random() * 3);
+                }
+            }
+            neutrones.push(nuevos);
+        }
+        return neutrones;
+    }
+
+    function simularMonteCarlo() {
+        const p = parseFloat(document.getElementById('prob_p').value);
+        const n0 = parseInt(document.getElementById('neutrones_n0').value);
+        const pasos = parseInt(document.getElementById('generaciones').value);
+
+        const datos = monteCarlo(p, n0, pasos);
+        const k_efectivo = datos[datos.length-1] / datos[datos.length-2];
+
+        let estado = "";
+        if (k_efectivo < 0.95) estado = "Subcritico";
+        else if (k_efectivo < 1.05) estado = "Critico";
+        else estado = "Supercritico";
+
+        document.getElementById('resultado_mc').innerHTML = 
+            'Gen:' + datos.length + ' | Final:' + datos[datos.length-1] + ' | k=' + k_efectivo.toFixed(4) + '<br>' + estado;
+
+        document.getElementById('statNeutrones').innerHTML = datos[datos.length-1];
+
+        const isDark = document.body.classList.contains('dark');
+        const fontColor = isDark ? '#fff' : '#2c3e4f';
+
+        const trace = {
+            y: datos,
+            x: Array.from({length: datos.length}, (_, i) => i),
+            mode: 'lines+markers',
+            line: {color: '#00ff9c', width: 2},
+            marker: {size: 2},
+            fill: 'tozeroy',
+            fillcolor: 'rgba(0, 255, 156, 0.1)'
+        };
+
+        const layout = {
+            template: 'plotly_dark',
+            title: { text: 'Monte Carlo', font: { size: 10, color: fontColor } },
+            xaxis: { title: "Generacion", tickfont: { color: fontColor }, titlefont: { color: fontColor } },
+            yaxis: { title: "Neutrones", type: 'log', tickfont: { color: fontColor }, titlefont: { color: fontColor } },
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        };
+
+        Plotly.newPlot('grafica_mc', [trace], layout);
+        visualizarMonteCarlo3D(datos);
+    }
+
+    function visualizarMonteCarlo3D(datos) {
+        const canvas = document.getElementById('mcCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function draw() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const isDark = document.body.classList.contains('dark');
+            const bgColor = isDark ? '#2a2a2a' : '#d0d0d0';
+
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, w, h);
+
+            const maxVal = Math.max(...datos);
+            const barWidth = w / datos.length * 0.6;
+            const barSpacing = w / datos.length * 0.4;
+
+            for (let i = 0; i < datos.length; i++) {
+                const barHeight = Math.min((datos[i] / maxVal) * (h - 40), h - 40);
+                const x = i * (barWidth + barSpacing) + barSpacing/2;
+                const y = h - barHeight - 20;
+
+                ctx.fillStyle = '#00ff9c';
+                ctx.fillRect(x, y, barWidth, barHeight);
+
+                ctx.fillStyle = isDark ? '#ccc' : '#333';
+                ctx.font = '8px "Nunito"';
+                ctx.textAlign = 'center';
+                if (datos[i] < 100000) ctx.fillText(datos[i], x + barWidth/2, y - 2);
+                ctx.fillStyle = isDark ? '#888' : '#666';
+                ctx.fillText(i, x + barWidth/2, h - 8);
+            }
+        }
+
+        draw();
+        window.addEventListener('resize', () => draw());
+    }
+
+    function abrirFision() {
+        window.open('fision_nuclear.html', '_blank');
+    }
+
+    document.querySelectorAll('.nucleido-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.nucleido-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    document.getElementById('energia_inicial_elastica').addEventListener('input', () => {
+        actualizarGraficaElastica();
+    });
+
+    window.onload = () => {
+        simularMonteCarlo();
+        document.querySelector('.nucleido-btn').classList.add('active');
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+    };
+</script>
+</body>
+</html>
