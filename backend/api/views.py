@@ -1,6 +1,7 @@
 import math
 import random
 import json
+from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -8,6 +9,11 @@ from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+try:
+	import radioactivedecay as rd
+except ImportError:
+	rd = None
 
 
 _NOTEBOOK_FISION_HTML = None
@@ -35,7 +41,6 @@ def _extract_html_principal_from_notebook():
 
 
 def _extract_html_from_notebook_variable(variable_name):
-
 	notebook_path = Path(__file__).resolve().parents[2] / "tesis_lab_nuclear.ipynb"
 	if not notebook_path.exists():
 		return None
@@ -69,7 +74,6 @@ def _normalize_notebook_navigation(html):
 	if not html:
 		return html
 
-	# Force fission navigation to stay in the same browser view when embedded by Vite.
 	replacements = {
 		"window.open('/fision', '_blank');": "window.location.href='/django/api/fision/';",
 		"window.open(\"/fision\", \"_blank\");": "window.location.href='/django/api/fision/';",
@@ -80,12 +84,8 @@ def _normalize_notebook_navigation(html):
 	for old, new in replacements.items():
 		html = html.replace(old, new)
 
-	# Keep the "Volver" link in the same embedded flow.
 	html = html.replace('href="/"', 'href="/django/api/principal/"')
-
 	return html
-
-
 def _to_float(value, field_name):
 	try:
 		return float(value)
@@ -585,3 +585,294 @@ def scattering_elastic(request):
 			"timestamp": datetime.now(timezone.utc).isoformat(),
 		}
 	)
+
+
+@api_view(["POST"])
+def radioactive_decay(request):
+	if rd is None:
+		return Response(
+			{"error": "La libreria radioactivedecay no esta instalada en el backend"},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+	def _as_str_key_dict(values):
+		return {str(key): values[key] for key in values}
+
+	def _as_float_dict(values):
+		return {str(key): float(values[key]) for key in values}
+
+	def _as_list_float_dict(values):
+		return {str(key): [float(v) for v in series] for key, series in values.items()}
+
+	try:
+		raw_isotope = request.data.get("isotope", "")
+		if isinstance(raw_isotope, int):
+			isotope = raw_isotope
+		else:
+			text_isotope = str(raw_isotope).strip()
+			isotope = int(text_isotope) if text_isotope.isdigit() else text_isotope
+
+		initial_value = _to_float(request.data.get("initial_value", request.data.get("initial_activity_bq", 1.0)), "initial_value")
+		input_units = str(request.data.get("input_units", "Bq")).strip()
+		duration = _to_float(request.data.get("duration", 100.0), "duration")
+		time_units = str(request.data.get("time_units", "y")).strip().lower()
+		npoints = _to_int(request.data.get("points", 240), "points")
+		output_mode = str(request.data.get("output_mode", "activities")).strip().lower()
+		output_units = str(request.data.get("output_units", "Bq")).strip()
+
+		if not isotope:
+			raise ValueError("isotope es obligatorio")
+		if initial_value <= 0:
+			raise ValueError("initial_value debe ser mayor que 0")
+		if duration <= 0:
+			raise ValueError("duration debe ser mayor que 0")
+		if time_units not in {"us", "μs", "ms", "s", "m", "h", "d", "y"}:
+			raise ValueError("time_units debe ser una de: us, μs, ms, s, m, h, d, y")
+		if npoints < 20 or npoints > 1200:
+			raise ValueError("points debe estar entre 20 y 1200")
+		if output_mode not in {"activities", "masses", "moles", "numbers"}:
+			raise ValueError("output_mode debe ser: activities, masses, moles o numbers")
+
+		inv = rd.Inventory({isotope: initial_value}, input_units)
+		decayed_inv = inv.decay(duration, time_units)
+
+		if output_mode == "activities":
+			times, series_raw = inv.decay_time_series(duration, time_units, decay_units=output_units, npoints=npoints)
+			inventory_after_raw = decayed_inv.activities(output_units)
+			fractions_raw = decayed_inv.activity_fractions()
+		elif output_mode == "masses":
+			times, series_raw = inv.decay_time_series(duration, time_units, decay_units=output_units, npoints=npoints)
+			inventory_after_raw = decayed_inv.masses(output_units)
+			fractions_raw = decayed_inv.mass_fractions()
+		elif output_mode == "moles":
+			times, series_raw = inv.decay_time_series(duration, time_units, decay_units=output_units, npoints=npoints)
+			inventory_after_raw = decayed_inv.moles(output_units)
+			fractions_raw = decayed_inv.mole_fractions()
+		else:
+			times, series_raw = inv.decay_time_series(duration, time_units, decay_units="num", npoints=npoints)
+			inventory_after_raw = decayed_inv.numbers()
+			fractions_raw = decayed_inv.mole_fractions()
+
+		if isinstance(isotope, int):
+			parent_nuclide = rd.Nuclide(isotope)
+			input_label = parent_nuclide.nuclide
+		else:
+			input_label = str(isotope)
+			parent_nuclide = rd.Nuclide(input_label)
+
+		series_by_nuclide = _as_list_float_dict(series_raw)
+		inventory_after = _as_float_dict(inventory_after_raw)
+		fractions = _as_float_dict(fractions_raw)
+		cumulative_decays = _as_float_dict(inv.cumulative_decays(duration, time_units))
+
+		chain_half_lives = _as_str_key_dict(decayed_inv.half_lives("readable"))
+		chain_progeny = {str(key): [str(x) for x in values] for key, values in decayed_inv.progeny().items()}
+		chain_bf = {str(key): [float(x) for x in values] for key, values in decayed_inv.branching_fractions().items()}
+		chain_modes = {str(key): [str(x) for x in values] for key, values in decayed_inv.decay_modes().items()}
+
+		parent_key = parent_nuclide.nuclide if parent_nuclide.nuclide in series_by_nuclide else None
+		if parent_key is None:
+			for key in series_by_nuclide:
+				if key.lower() == parent_nuclide.nuclide.lower():
+					parent_key = key
+					break
+		if parent_key is None:
+			parent_key = next(iter(series_by_nuclide.keys()))
+
+		parent_series = series_by_nuclide[parent_key]
+		total_series = []
+		for i in range(len(times)):
+			total_series.append(sum(series[i] for series in series_by_nuclide.values()))
+
+		half_life_readable = parent_nuclide.half_life("readable")
+		half_life_years = parent_nuclide.half_life("y")
+		half_life_years_value = None if isinstance(half_life_years, str) else float(half_life_years)
+	except ValueError as error:
+		return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+	except Exception as error:
+		return Response(
+			{"error": f"No se pudo calcular el decaimiento para '{request.data.get('isotope', '')}': {error}"},
+			status=status.HTTP_400_BAD_REQUEST,
+		)
+
+	products = []
+	for key, values in series_by_nuclide.items():
+		if key == parent_key:
+			continue
+		final_value = float(values[-1])
+		if final_value > 1e-18:
+			products.append({"nuclide": key, "final_value": final_value})
+	products.sort(key=lambda item: item["final_value"], reverse=True)
+
+	return Response(
+		{
+			"id": str(random.randint(100000, 999999)),
+			"isotope": parent_key,
+			"input_isotope": input_label,
+			"input_units": input_units,
+			"input_value": initial_value,
+			"output_mode": output_mode,
+			"output_units": output_units,
+			"time_units": time_units,
+			"times": [float(t) for t in times],
+			"series_by_nuclide": series_by_nuclide,
+			"parent_series": parent_series,
+			"total_series": total_series,
+			"final_parent_value": float(parent_series[-1]),
+			"inventory_after": inventory_after,
+			"fractions": fractions,
+			"cumulative_decays": cumulative_decays,
+			"half_life_years": half_life_years_value,
+			"half_life_label": half_life_readable,
+			"nuclide_data": {
+				"progeny": [str(x) for x in parent_nuclide.progeny()],
+				"branching_fractions": [float(x) for x in parent_nuclide.branching_fractions()],
+				"decay_modes": [str(x) for x in parent_nuclide.decay_modes()],
+				"Z": int(parent_nuclide.Z),
+				"A": int(parent_nuclide.A),
+				"atomic_mass": float(parent_nuclide.atomic_mass),
+			},
+			"chain_data": {
+				"half_lives": chain_half_lives,
+				"progeny": chain_progeny,
+				"branching_fractions": chain_bf,
+				"decay_modes": chain_modes,
+			},
+			"products": products[:8],
+			"timestamp": datetime.now(timezone.utc).isoformat(),
+		}
+	)
+
+
+@api_view(["POST"])
+def radioactive_decay_chain_export(request):
+	if rd is None:
+		return Response(
+			{"error": "La libreria radioactivedecay no esta instalada en el backend"},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+	try:
+		raw_isotope = request.data.get("isotope", "")
+		if isinstance(raw_isotope, int):
+			isotope = raw_isotope
+		else:
+			isotope_text = str(raw_isotope).strip()
+			if not isotope_text:
+				raise ValueError("isotope es obligatorio")
+			isotope = int(isotope_text) if isotope_text.isdigit() else isotope_text
+
+		try:
+			import matplotlib
+			matplotlib.use("Agg")
+			import matplotlib.pyplot as plt
+		except Exception as import_error:
+			raise ValueError(f"Matplotlib no disponible: {import_error}")
+
+		nuclide = rd.Nuclide(isotope)
+		nuclide_label = nuclide.nuclide
+
+		plot_result = nuclide.plot()
+		if isinstance(plot_result, tuple) and len(plot_result) > 0:
+			fig = plot_result[0] if hasattr(plot_result[0], "savefig") else plt.gcf()
+		else:
+			fig = plt.gcf()
+
+		buf = BytesIO()
+		fig.savefig(buf, format="png", dpi=170, bbox_inches="tight")
+		plt.close(fig)
+		buf.seek(0)
+	except ValueError as error:
+		return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+	except Exception as error:
+		return Response(
+			{"error": f"No se pudo exportar el diagrama original para '{request.data.get('isotope', '')}': {error}"},
+			status=status.HTTP_400_BAD_REQUEST,
+		)
+
+	filename = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in str(nuclide_label))
+	response = HttpResponse(buf.getvalue(), content_type="image/png")
+	response["Content-Disposition"] = f'attachment; filename="decay_chain_{filename}.png"'
+	return response
+
+
+def _render_nuclide_chain_plot_png(isotope, theme="lab"):
+	import matplotlib
+	matplotlib.use("Agg")
+	import matplotlib.pyplot as plt
+
+	nuclide = rd.Nuclide(isotope)
+	plot_result = nuclide.plot()
+	if isinstance(plot_result, tuple) and len(plot_result) > 0 and hasattr(plot_result[0], "savefig"):
+		fig = plot_result[0]
+	else:
+		fig = plt.gcf()
+
+	if theme == "lab":
+		fig.patch.set_facecolor("#050f1a")
+		for ax in fig.get_axes():
+			ax.set_facecolor("#081623")
+			for spine in ax.spines.values():
+				spine.set_color("#1a3a4a")
+			ax.tick_params(colors="#7a9ab0")
+			ax.title.set_color("#c8e8f0")
+			ax.xaxis.label.set_color("#22d3ee")
+			ax.yaxis.label.set_color("#22d3ee")
+
+			# Force higher-contrast chain strokes so they are not rendered as black.
+			for line in ax.lines:
+				line.set_color("#22d3ee")
+				line.set_linewidth(max(1.5, float(line.get_linewidth())))
+
+			for collection in ax.collections:
+				try:
+					collection.set_edgecolor("#34d399")
+				except Exception:
+					pass
+				try:
+					collection.set_facecolor("#22d3ee")
+				except Exception:
+					pass
+
+			for patch in ax.patches:
+				if hasattr(patch, "set_edgecolor"):
+					patch.set_edgecolor("#34d399")
+				if hasattr(patch, "set_linewidth"):
+					patch.set_linewidth(1.4)
+
+			for text in ax.texts:
+				text.set_color("#c8e8f0")
+
+	buf = BytesIO()
+	fig.savefig(buf, format="png", dpi=170, bbox_inches="tight")
+	plt.close(fig)
+	buf.seek(0)
+	return nuclide.nuclide, buf.getvalue()
+
+
+@api_view(["GET"])
+def radioactive_decay_chain_image(request):
+	if rd is None:
+		return Response(
+			{"error": "La libreria radioactivedecay no esta instalada en el backend"},
+			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+		)
+
+	try:
+		raw_isotope = request.query_params.get("isotope", "")
+		theme = str(request.query_params.get("theme", "lab")).strip().lower()
+		if not raw_isotope:
+			raise ValueError("isotope es obligatorio")
+		isotope = int(raw_isotope) if str(raw_isotope).isdigit() else str(raw_isotope).strip()
+		nuclide_label, image_bytes = _render_nuclide_chain_plot_png(isotope, theme=theme)
+	except ValueError as error:
+		return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+	except Exception as error:
+		return Response(
+			{"error": f"No se pudo generar el diagrama para '{request.query_params.get('isotope', '')}': {error}"},
+			status=status.HTTP_400_BAD_REQUEST,
+		)
+
+	response = HttpResponse(image_bytes, content_type="image/png")
+	response["Content-Disposition"] = f'inline; filename="decay_chain_{nuclide_label}.png"'
+	return response

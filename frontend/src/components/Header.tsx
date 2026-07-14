@@ -12,6 +12,7 @@ const TABS = [
   { id: 'dispersion', label: 'Dispersion Elastica', sub: 'Neutrones', code: 'MOD-02' },
   { id: 'reactor', label: 'Reactor Nuclear', sub: 'Ciclo Energetico', code: 'MOD-03' },
   { id: 'simulacion-3d', label: 'Simulacion 3D', sub: 'Reaccion Nuclear', code: 'MOD-04' },
+  { id: 'decaimiento', label: 'Decaimiento', sub: 'Radiactividad', code: 'MOD-05' },
 ];
 
 export default function Header({ activeTab, onTabChange, onHome }: HeaderProps) {

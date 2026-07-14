@@ -5,8 +5,9 @@ import MonteCarloSection from './sections/MonteCarloSection';
 import ElasticScatteringSection from './sections/ElasticScatteringSection';
 import Simulation3DSection from './sections/Simulation3DSection';
 import ReactorSection from './sections/ReactorSection';
+import DecaySection from './sections/DecaySection';
 
-type Tab = 'monte-carlo' | 'dispersion' | 'simulacion-3d' | 'reactor';
+type Tab = 'monte-carlo' | 'dispersion' | 'simulacion-3d' | 'reactor' | 'decaimiento';
 
 function App() {
   const [view, setView] = useState<'landing' | 'lab'>('landing');
@@ -44,6 +45,7 @@ function App() {
           {tab === 'dispersion' && <ElasticScatteringSection />}
           {tab === 'reactor' && <ReactorSection />}
           {tab === 'simulacion-3d' && <Simulation3DSection />}
+          {tab === 'decaimiento' && <DecaySection />}
         </main>
 
         <footer className="mt-8 border-t border-navy-border">

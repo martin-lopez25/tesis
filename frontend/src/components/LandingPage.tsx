@@ -52,6 +52,15 @@ const MODULES = [
     color: '#f97316',
     code: 'MOD-04',
   },
+  {
+    id: 'decaimiento',
+    title: 'Decaimiento',
+    subtitle: 'Cadenas radiactivas',
+    desc: 'Selecciona isotopos y analiza su actividad en funcion del tiempo.',
+    icon: Radio,
+    color: '#fb7185',
+    code: 'MOD-05',
+  },
 ];
 
 export default function LandingPage({ onEnter }: LandingPageProps) {
@@ -89,7 +98,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
 
             <div className="mt-10 grid grid-cols-3 gap-px bg-navy-border">
               {[
-                { label: 'MODULOS', value: '04', accent: 'text-reactor' },
+                { label: 'MODULOS', value: '05', accent: 'text-reactor' },
                 { label: 'SIMULACIONES', value: '12+', accent: 'text-[#22d3ee]' },
                 { label: 'COMPUTO', value: 'REAL-TIME', accent: 'text-[#fbbf24]' },
               ].map((s) => (
@@ -137,7 +146,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {MODULES.map((mod, i) => {
             const Icon = mod.icon;
             return (
