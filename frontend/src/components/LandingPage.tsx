@@ -17,49 +17,31 @@ interface LandingPageProps {
 
 const MODULES = [
   {
-    id: 'monte-carlo',
-    title: 'Monte Carlo',
-    subtitle: 'Criticalidad neutronica',
-    desc: 'Simulacion estocastica de una cadena de fision generacion por generacion.',
-    icon: Activity,
+    id: 'reactor-nuclear',
+    title: 'Reactor Nuclear',
+    subtitle: 'Modulo principal tecnico',
+    desc: 'Contiene Monte Carlo, dispersion elastica, reactor simulacion y decaimiento en un mismo entorno.',
+    icon: Zap,
     color: '#a2ff40',
-    code: 'MOD-01',
+    code: 'MAIN-01',
   },
   {
-    id: 'dispersion',
-    title: 'Dispersion Elastico',
-    subtitle: 'Cinematica de neutrones',
-    desc: 'Analisis de colision neutron-nucleo con energia dispersada y seccion eficaz.',
+    id: 'medicina-nuclear',
+    title: 'Medicina Nuclear',
+    subtitle: 'Aplicacion clinica',
+    desc: 'Espacio para radiofarmacos, dosimetria, imagen molecular y analisis de actividad en contexto medico.',
     icon: FlaskConical,
     color: '#22d3ee',
-    code: 'MOD-02',
+    code: 'MAIN-02',
   },
   {
-    id: 'reactor',
-    title: 'Reactor Nuclear',
-    subtitle: 'Ciclo energetico completo',
-    desc: 'Diagrama animado de reactor con barras de control y parametros en tiempo real.',
-    icon: Zap,
-    color: '#fbbf24',
-    code: 'MOD-03',
-  },
-  {
-    id: 'simulacion-3d',
-    title: 'Simulacion 3D',
-    subtitle: 'Visualizacion de reacciones',
-    desc: 'Render tridimensional de fisiones y colisiones en perspectiva.',
+    id: 'curso',
+    title: 'Curso',
+    subtitle: 'Ruta guiada de aprendizaje',
+    desc: 'Contenido estructurado por unidades con practicas, visualizaciones y apoyo para estudio progresivo.',
     icon: Box,
-    color: '#f97316',
-    code: 'MOD-04',
-  },
-  {
-    id: 'decaimiento',
-    title: 'Decaimiento',
-    subtitle: 'Cadenas radiactivas',
-    desc: 'Selecciona isotopos y analiza su actividad en funcion del tiempo.',
-    icon: Radio,
-    color: '#fb7185',
-    code: 'MOD-05',
+    color: '#fbbf24',
+    code: 'MAIN-03',
   },
 ];
 
@@ -87,18 +69,18 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <button onClick={() => onEnter('reactor')} className="btn-primary">
+              <button onClick={() => onEnter('reactor-nuclear')} className="btn-primary">
                 <Zap size={18} /> INICIAR REACTOR
               </button>
-              <button onClick={() => onEnter('monte-carlo')} className="btn-ghost">
-                EXPLORAR MODULOS
+              <button onClick={() => onEnter('medicina-nuclear')} className="btn-ghost">
+                ABRIR MEDICINA NUCLEAR
                 <ArrowRight size={16} />
               </button>
             </div>
 
             <div className="mt-10 grid grid-cols-3 gap-px bg-navy-border">
               {[
-                { label: 'MODULOS', value: '05', accent: 'text-reactor' },
+                { label: 'MODULOS', value: '03', accent: 'text-reactor' },
                 { label: 'SIMULACIONES', value: '12+', accent: 'text-[#22d3ee]' },
                 { label: 'COMPUTO', value: 'REAL-TIME', accent: 'text-[#fbbf24]' },
               ].map((s) => (
@@ -142,11 +124,11 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
         <div className="mb-6 flex items-end justify-between">
           <div>
             <span className="hud-label">SELECCIONA UN MODULO</span>
-            <h2 className="mt-2 font-display text-3xl font-bold text-white">Modulos de simulacion</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold text-white">Modulos principales</h2>
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {MODULES.map((mod, i) => {
             const Icon = mod.icon;
             return (
