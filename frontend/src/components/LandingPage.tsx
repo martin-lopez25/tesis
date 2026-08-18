@@ -1,13 +1,8 @@
 import {
-  ArrowRight,
   Zap,
-  Atom,
-  FlaskConical,
-  Box,
   Activity,
   Radio,
   ShieldCheck,
-  ChevronRight,
 } from 'lucide-react';
 import AtomLogo from './AtomLogo';
 
@@ -15,40 +10,10 @@ interface LandingPageProps {
   onEnter: (tab: string) => void;
 }
 
-const MODULES = [
-  {
-    id: 'reactor-nuclear',
-    title: 'Reactor Nuclear',
-    subtitle: 'Modulo principal tecnico',
-    desc: 'Contiene Monte Carlo, dispersion elastica, reactor simulacion y decaimiento en un mismo entorno.',
-    icon: Zap,
-    color: '#a2ff40',
-    code: 'MAIN-01',
-  },
-  {
-    id: 'medicina-nuclear',
-    title: 'Medicina Nuclear',
-    subtitle: 'Aplicacion clinica',
-    desc: 'Espacio para radiofarmacos, dosimetria, imagen molecular y analisis de actividad en contexto medico.',
-    icon: FlaskConical,
-    color: '#22d3ee',
-    code: 'MAIN-02',
-  },
-  {
-    id: 'curso',
-    title: 'Curso',
-    subtitle: 'Ruta guiada de aprendizaje',
-    desc: 'Contenido estructurado por unidades con practicas, visualizaciones y apoyo para estudio progresivo.',
-    icon: Box,
-    color: '#fbbf24',
-    code: 'MAIN-03',
-  },
-];
-
 export default function LandingPage({ onEnter }: LandingPageProps) {
   return (
     <div className="relative min-h-screen animate-fade-up">
-      <section className="relative mx-auto max-w-7xl px-4 pb-12 pt-16 lg:pt-24">
+      <section className="relative mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl items-center px-4 pb-8 pt-14 sm:pb-10 sm:pt-16 lg:pb-12 lg:pt-20">
         <div className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div className="relative">
             <div className="mb-4 flex items-center gap-3">
@@ -69,12 +34,8 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <button onClick={() => onEnter('reactor-nuclear')} className="btn-primary">
-                <Zap size={18} /> INICIAR REACTOR
-              </button>
-              <button onClick={() => onEnter('medicina-nuclear')} className="btn-ghost">
-                ABRIR MEDICINA NUCLEAR
-                <ArrowRight size={16} />
+              <button onClick={() => onEnter('modulos')} className="btn-primary">
+                <Zap size={18} /> MODULOS PRINCIPALES
               </button>
             </div>
 
@@ -92,10 +53,12 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </div>
           </div>
 
-          <div className="relative hidden h-[420px] items-center justify-center lg:flex">
+          <div className="relative flex h-[250px] items-center justify-center sm:h-[320px] lg:h-[460px]">
             <div className="absolute inset-0 dot-grid opacity-30" />
             <div className="relative">
-              <AtomLogo size={360} />
+              <AtomLogo size={220} className="sm:hidden" />
+              <AtomLogo size={290} className="hidden sm:flex lg:hidden" />
+              <AtomLogo size={390} className="hidden lg:flex" />
             </div>
           </div>
         </div>
@@ -117,86 +80,6 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
               <ShieldCheck size={11} className="text-reactor" /> NO RADIATION · SIMULATED DATA
             </span>
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-12">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <span className="hud-label">SELECCIONA UN MODULO</span>
-            <h2 className="mt-2 font-display text-3xl font-bold text-white">Modulos principales</h2>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULES.map((mod, i) => {
-            const Icon = mod.icon;
-            return (
-              <button
-                key={mod.id}
-                onClick={() => onEnter(mod.id)}
-                className="module-card group text-left"
-                style={{ animationDelay: `${i * 0.08}s` }}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="font-mono-tech text-[10px] text-[#7a9ab0]">{mod.code}</span>
-                  <span
-                    className="flex h-9 w-9 items-center justify-center border transition-all group-hover:scale-110"
-                    style={{ borderColor: `${mod.color}40`, backgroundColor: `${mod.color}10` }}
-                  >
-                    <Icon size={16} style={{ color: mod.color }} />
-                  </span>
-                </div>
-
-                <h3 className="font-display text-lg font-bold text-white transition-colors group-hover:text-reactor">
-                  {mod.title}
-                </h3>
-                <p className="mt-0.5 font-mono-tech text-[10px] uppercase tracking-wider" style={{ color: mod.color }}>
-                  {mod.subtitle}
-                </p>
-                <p className="mt-3 font-body text-sm leading-relaxed text-[#7a9ab0]">{mod.desc}</p>
-
-                <div className="mt-4 flex items-center gap-1 font-mono-tech text-[10px] uppercase tracking-widest text-[#7a9ab0] transition-colors group-hover:text-reactor">
-                  ABRIR MODULO
-                  <ChevronRight size={12} className="transition-transform group-hover:translate-x-1" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12">
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              title: 'Fisica real',
-              desc: 'Modelos basados en cinematica neutronica y teoria de reactores.',
-              icon: Atom,
-              color: '#a2ff40',
-            },
-            {
-              title: '100% interactivo',
-              desc: 'Parametros ajustables con visualizacion inmediata.',
-              icon: Activity,
-              color: '#22d3ee',
-            },
-            {
-              title: 'Uso academico',
-              desc: 'Herramienta educativa abierta. Datos simulados.',
-              icon: ShieldCheck,
-              color: '#fbbf24',
-            },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.title} className="relative border border-navy-border bg-navy-mid/50 p-5">
-                <Icon size={20} style={{ color: item.color }} />
-                <h4 className="mt-3 font-display text-sm font-bold uppercase tracking-wider text-white">{item.title}</h4>
-                <p className="mt-1 font-body text-sm text-[#7a9ab0]">{item.desc}</p>
-              </div>
-            );
-          })}
         </div>
       </section>
     </div>

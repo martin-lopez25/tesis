@@ -115,7 +115,7 @@
   }
 
   .tab-btn {
-    @apply relative flex items-center gap-2 px-4 py-2 font-display text-[11px] font-bold uppercase tracking-widest transition-all duration-150;
+    @apply relative flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 font-display text-[10px] font-bold uppercase tracking-wider transition-all duration-150 sm:h-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-[11px] sm:tracking-widest;
   }
 
   .tab-btn-inactive {

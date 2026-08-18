@@ -7,16 +7,16 @@ export default defineConfig({
   server: {
     proxy: {
       '/django': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/django/, ''),
       },
       '/fision': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
       '/principal': {
-        target: 'http://127.0.0.1:8001',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },

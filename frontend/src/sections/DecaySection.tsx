@@ -1,48 +1,16 @@
-import { useMemo, useState } from 'react';
-import { Atom, Activity, Clock3, Radiation } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Atom, Activity, Clock3, Radiation, Image as ImageIcon } from 'lucide-react';
 import Panel from '../components/Panel';
 import NumberInput from '../components/NumberInput';
 import StatCard from '../components/StatCard';
 import LineChart from '../components/LineChart';
 
-type QuantityMode = 'activities' | 'masses' | 'moles' | 'numbers';
-
-type DecayProduct = { nuclide: string; final_value: number };
-
-type DecayResult = {
-  isotope: string;
-  input_isotope: string;
-  input_units: string;
-  input_value: number;
-  output_mode: QuantityMode;
-  output_units: string;
-  time_units: 's' | 'm' | 'h' | 'd' | 'y';
-  times: number[];
-  series_by_nuclide: Record<string, number[]>;
-  parent_series: number[];
-  total_series: number[];
-  final_parent_value: number;
-  inventory_after: Record<string, number>;
-  fractions: Record<string, number>;
-  cumulative_decays: Record<string, number>;
-  half_life_years: number | null;
-  half_life_label: string;
-  nuclide_data: {
-    progeny: string[];
-    branching_fractions: number[];
-    decay_modes: string[];
-    Z: number;
-    A: number;
-    atomic_mass: number;
-  };
-  chain_data: {
-    half_lives: Record<string, string>;
-    progeny: Record<string, string[]>;
-    branching_fractions: Record<string, number[]>;
-    decay_modes: Record<string, string[]>;
-  };
-  products: DecayProduct[];
-};
+import {
+  computeRadioactiveDecay,
+  type DecayResult,
+  type QuantityMode,
+  NUCLEAR_DATABASE,
+} from '../lib/physics';
 
 const ISOTOPES = [
   'Mo-99',
@@ -226,43 +194,43 @@ export default function DecaySection() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [originalPlotUrl, setOriginalPlotUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DecayResult | null>(null);
   const currentElementNameEs = isotopeToElementNameEs(result?.isotope ?? isotope);
 
-  const run = async () => {
+  const buildChainImageUrl = (targetIsotope: string) =>
+    `/django/api/simulations/radioactive-decay-chain-image/?isotope=${encodeURIComponent(
+      targetIsotope
+    )}&theme=lab&_t=${Date.now()}`;
+
+  const run = () => {
     setLoading(true);
     setError(null);
+    setImageError(false);
     try {
-      const res = await fetch('/django/api/simulations/radioactive-decay/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          isotope,
-          initial_value: initialValue,
-          input_units: inputUnits,
-          duration,
-          time_units: timeUnits,
-          points,
-          output_mode: outputMode,
-          output_units: outputUnits,
-        }),
-      });
-
-      const payload = (await res.json()) as DecayResult | { error: string };
-      if (!res.ok || 'error' in payload) {
-        throw new Error('error' in payload ? payload.error : `HTTP ${res.status}`);
-      }
-      setResult(payload);
-      setOriginalPlotUrl(
-        `/django/api/simulations/radioactive-decay-chain-image/?isotope=${encodeURIComponent(payload.isotope)}&theme=lab&t=${Date.now()}`
+      const payload = computeRadioactiveDecay(
+        isotope,
+        initialValue,
+        inputUnits,
+        duration,
+        timeUnits,
+        points,
+        outputMode,
+        outputUnits
       );
+      setResult(payload);
+      setOriginalPlotUrl(buildChainImageUrl(isotope));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido');
+      setError(e instanceof Error ? e.message : 'Error al calcular decaimiento');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    run();
+  }, []);
 
   const activitySeries = useMemo(() => {
     if (!result) return [];
@@ -291,33 +259,115 @@ export default function DecaySection() {
     });
   }, [result]);
 
+  const openExport = (url: string, filename: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    const isCapacitor = window.location.protocol === 'capacitor:';
+    if (isCapacitor) {
+      window.open(url, '_blank');
+    }
+  };
+
   const exportOriginalChain = async () => {
     setExporting(true);
     setError(null);
     try {
       const isotopeToExport = result?.isotope || isotope;
-      const res = await fetch('/django/api/simulations/radioactive-decay-chain-export/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isotope: isotopeToExport }),
-      });
+      const data = NUCLEAR_DATABASE[isotopeToExport];
+      const filename = `cadena_decaimiento_${String(isotopeToExport).replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
 
-      if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(payload?.error || `HTTP ${res.status}`);
+      if (originalPlotUrl && !imageError) {
+        try {
+          const response = await fetch(originalPlotUrl, { cache: 'no-store' });
+          if (response.ok) {
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            openExport(blobUrl, filename);
+            window.setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+            return;
+          }
+        } catch {
+          openExport(originalPlotUrl, filename);
+          return;
+        }
       }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `decay_chain_${String(isotopeToExport).replace(/[^a-zA-Z0-9_-]/g, '_')}.png`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = 900;
+      canvas.height = 450;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Background
+        ctx.fillStyle = '#0a1627';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Header
+        ctx.fillStyle = '#22d3ee';
+        ctx.font = 'bold 22px monospace';
+        ctx.fillText(`CADENA DE DECAIMIENTO RADIACTIVO: ${isotopeToExport}`, 40, 50);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px monospace';
+        ctx.fillText(`Generado en modo local offline | NuclearLab Simulation Engine`, 40, 80);
+
+        // Parent Box
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeRect(50, 140, 200, 120);
+        ctx.fillRect(50, 140, 200, 120);
+
+        ctx.fillStyle = '#facc15';
+        ctx.font = 'bold 24px monospace';
+        ctx.fillText(isotopeToExport, 70, 180);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '13px monospace';
+        ctx.fillText(`T½: ${data?.halfLifeReadable ?? 'Desconocido'}`, 70, 210);
+        ctx.fillText(`Modo: ${data?.decayModes.join(', ') ?? 'β-'}`, 70, 235);
+
+        // Daughters
+        const progeny = data?.progeny ?? [];
+        if (progeny.length > 0) {
+          progeny.forEach((dName, idx) => {
+            const yOffset = 140 + idx * 130;
+            // Arrow
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(250, 200);
+            ctx.lineTo(380, yOffset + 60);
+            ctx.stroke();
+
+            // Daughter Box
+            ctx.strokeStyle = '#38bdf8';
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeRect(380, yOffset, 220, 100);
+            ctx.fillRect(380, yOffset, 220, 100);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 20px monospace';
+            ctx.fillText(dName, 400, yOffset + 38);
+
+            const dData = NUCLEAR_DATABASE[dName];
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '12px monospace';
+            ctx.fillText(`T½: ${dData?.halfLifeReadable ?? 'Estable'}`, 400, yOffset + 65);
+            ctx.fillText(`Fracción: ${((data?.branchingFractions[idx] ?? 1) * 100).toFixed(1)}%`, 400, yOffset + 85);
+          });
+        }
+
+        const url = canvas.toDataURL('image/png');
+        openExport(url, filename);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo exportar el diagrama original');
+      setError(e instanceof Error ? e.message : 'Error al exportar diagrama');
     } finally {
       setExporting(false);
     }
@@ -538,26 +588,77 @@ export default function DecaySection() {
           </Panel>
 
           <Panel title="Diagrama de cadena de desintegracion" badge="GRAPH" accent="reactor">
-            <div className="mb-3 flex justify-end">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 font-mono-tech text-xs text-[#7a9ab0]">
+                <ImageIcon size={14} className="text-reactor" />
+                <span>Generado con <strong className="text-white">radioactivedecay</strong> (Python)</span>
+              </div>
               <button onClick={exportOriginalChain} className="btn-ghost" disabled={exporting}>
-                {exporting ? 'EXPORTANDO...' : 'EXPORTAR ORIGINAL (Nuc.plot)'}
+                {exporting ? 'EXPORTANDO...' : 'EXPORTAR DIAGRAMA (PNG)'}
               </button>
             </div>
+
             {result ? (
-              <div className="border border-navy-border bg-[#081623]/80 p-2">
-                <div className="mx-auto w-full max-w-2xl">
+              <div className="rounded-lg border border-navy-border bg-[#081623]/80 p-2 sm:p-3">
+                <div className="mx-auto w-full max-w-4xl">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="hud-label">Original radioactivedecay · nuc.plot()</span>
-                    <span className="font-mono-tech text-[10px] text-[#7a9ab0]">{result.isotope}</span>
+                    <span className="hud-label">Cadena de Desintegración · {result.isotope}</span>
+                    <span className="font-mono-tech text-[10px] text-cyan">{currentElementNameEs}</span>
                   </div>
-                  {originalPlotUrl ? (
+
+                  {originalPlotUrl && !imageError ? (
                     <img
                       src={originalPlotUrl}
                       alt={`Diagrama original de ${result.isotope}`}
-                      className="w-full border border-navy-border bg-[#050f1a]"
+                      onError={() => setImageError(true)}
+                      className="w-full rounded border border-navy-border bg-[#050f1a] object-contain shadow-inner"
                     />
                   ) : (
-                    <p className="text-sm text-[#7a9ab0]">No se pudo cargar la imagen original.</p>
+                    /* Offline / Native SVG Tree Diagram */
+                    <div className="rounded border border-navy-border bg-[#050f1a] p-3 text-center sm:p-4">
+                      <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-5">
+                        {/* Parent Node */}
+                        <div className="rounded-lg border-2 border-amber-400/80 bg-amber-400/10 px-4 py-2.5 text-center shadow-lg shadow-amber-500/10">
+                          <span className="font-display text-lg font-bold text-amber-300">{result.isotope}</span>
+                          <div className="text-[11px] font-mono-tech text-gray-300">T½: {result.half_life_label}</div>
+                          <div className="text-[10px] font-mono-tech text-cyan-300">Modos: {result.nuclide_data.decay_modes.join(', ') || 'Desconocido'}</div>
+                        </div>
+
+                        {/* Arrows and Daughters */}
+                        {result.nuclide_data.progeny && result.nuclide_data.progeny.length > 0 ? (
+                          <div className="flex w-full flex-col items-center gap-2 sm:flex-row sm:gap-4">
+                            <div className="mx-auto flex flex-col items-center sm:mx-0 sm:min-w-24">
+                              <span className="text-cyan-400 text-sm font-bold sm:rotate-[-90deg]">↓</span>
+                              <span className="text-[10px] font-mono-tech text-cyan-300">Progenie</span>
+                            </div>
+
+                            <div className="flex flex-wrap justify-center gap-3">
+                              {result.nuclide_data.progeny.map((prog, idx) => {
+                                const bf = result.nuclide_data.branching_fractions?.[idx];
+                                const progData = NUCLEAR_DATABASE[prog];
+                                return (
+                                  <div key={prog} className="rounded-lg border border-cyan-500/50 bg-[#0a1b2d] px-3 py-2 text-center min-w-[140px] shadow">
+                                    <span className="font-display text-base font-bold text-cyan-300">{prog}</span>
+                                    {bf !== undefined && (
+                                      <div className="text-[10px] font-mono-tech text-emerald-400">
+                                        Rama: {(bf * 100).toFixed(1)}%
+                                      </div>
+                                    )}
+                                    <div className="text-[10px] font-mono-tech text-gray-400">
+                                      T½: {progData?.halfLifeReadable ?? 'Estable / Largo'}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs font-mono-tech text-emerald-400">
+                            Isótopo estable o sin decaimiento detectable en el intervalo.
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

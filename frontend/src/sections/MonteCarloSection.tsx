@@ -6,16 +6,7 @@ import StatCard from '../components/StatCard';
 import BarChart from '../components/BarChart';
 import LineChart from '../components/LineChart';
 
-type MonteCarloResult = {
-  generations: number[];
-  population: number[];
-  fissions: number[];
-  k_effective: number[];
-  total_fissions: number;
-  final_population: number;
-  average_k: number;
-  regime: 'subcritical' | 'critical' | 'supercritical';
-};
+import { computeMonteCarloFission, type MonteCarloResult } from '../lib/physics';
 
 function alphaFromA(A: number): number {
   return ((A - 1) / (A + 1)) ** 2;
@@ -96,27 +87,14 @@ export default function MonteCarloSection() {
   const [wattSamples, setWattSamples] = useState(100);
   const [wattRunId, setWattRunId] = useState(0);
 
-  const run = async () => {
+  const run = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/django/api/simulations/monte-carlo-fission/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initial_neutrons: initial,
-          generations,
-          fission_probability: probability,
-          neutrons_per_fission: nu,
-        }),
-      });
-      const payload = (await res.json()) as MonteCarloResult | { error: string };
-      if (!res.ok || 'error' in payload) {
-        throw new Error('error' in payload ? payload.error : `HTTP ${res.status}`);
-      }
+      const payload = computeMonteCarloFission(initial, generations, probability, nu);
       setResult(payload);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido');
+      setError(e instanceof Error ? e.message : 'Error al calcular simulación');
     } finally {
       setLoading(false);
     }

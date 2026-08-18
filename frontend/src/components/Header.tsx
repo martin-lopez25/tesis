@@ -37,9 +37,10 @@ export default function Header({ activeTab, onTabChange, onHome }: HeaderProps) 
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-        <button onClick={onHome} className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-80">
-          <AtomLogo size={38} />
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3">
+        <button onClick={onHome} className="flex shrink-0 items-center gap-2 transition-opacity hover:opacity-80 sm:gap-3">
+          <AtomLogo size={34} className="sm:hidden" />
+          <AtomLogo size={38} className="hidden sm:flex" />
           <div className="hidden sm:block">
             <div className="font-display text-base font-bold tracking-widest text-white">
               NUCLEAR<span className="text-reactor">LAB</span>
@@ -48,7 +49,7 @@ export default function Header({ activeTab, onTabChange, onHome }: HeaderProps) 
           </div>
         </button>
 
-        <nav className="flex flex-1 flex-wrap items-center justify-center gap-1">
+        <nav className="flex flex-1 flex-nowrap items-center justify-start gap-1 overflow-x-auto overscroll-x-contain px-1 sm:justify-center">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -59,9 +60,9 @@ export default function Header({ activeTab, onTabChange, onHome }: HeaderProps) 
                   : 'tab-btn-inactive border-b-2 border-transparent'
               }`}
             >
-              <span className="font-mono-tech text-[9px] opacity-50">{tab.code}</span>
+              <span className="hidden font-mono-tech text-[9px] opacity-50 sm:inline">{tab.code}</span>
               <span className="hidden text-sm md:inline">{tab.label}</span>
-              <span className="text-sm md:hidden">{tab.label.split(' ')[0]}</span>
+              <span className="text-xs sm:text-sm md:hidden">{tab.label.split(' ')[0]}</span>
             </button>
           ))}
         </nav>

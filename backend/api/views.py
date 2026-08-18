@@ -876,3 +876,56 @@ def radioactive_decay_chain_image(request):
 	response = HttpResponse(image_bytes, content_type="image/png")
 	response["Content-Disposition"] = f'inline; filename="decay_chain_{nuclide_label}.png"'
 	return response
+
+
+@api_view(["POST"])
+def execute_python_code(request):
+	import sys
+	from io import StringIO
+
+	code = request.data.get("code", "")
+	if not code or not isinstance(code, str):
+		return Response({"error": "El campo 'code' es obligatorio"}, status=status.HTTP_400_BAD_REQUEST)
+
+	old_stdout = sys.stdout
+	old_stderr = sys.stderr
+	redirected_output = StringIO()
+	redirected_error = StringIO()
+	sys.stdout = redirected_output
+	sys.stderr = redirected_error
+
+	exec_globals = {
+		"__name__": "__main__",
+		"math": math,
+		"random": random,
+		"json": json,
+		"rd": rd,
+	}
+
+	exec_status = "ok"
+	err_msg = ""
+	result_val = None
+
+	try:
+		exec(code, exec_globals)
+	except Exception as e:
+		exec_status = "error"
+		err_msg = str(e)
+		import traceback
+		traceback.print_exc(file=redirected_error)
+	finally:
+		sys.stdout = old_stdout
+		sys.stderr = old_stderr
+
+	stdout_val = redirected_output.getvalue()
+	stderr_val = redirected_error.getvalue()
+
+	return Response(
+		{
+			"status": exec_status,
+			"stdout": stdout_val,
+			"stderr": stderr_val,
+			"error": err_msg if exec_status == "error" else None,
+		}
+	)
+

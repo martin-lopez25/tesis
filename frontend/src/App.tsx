@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Activity, FlaskConical, Radio, Zap, ChevronRight, Box } from 'lucide-react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
@@ -10,8 +10,46 @@ import Simulation3DSection from './sections/Simulation3DSection';
 import Panel from './components/Panel';
 
 type ReactorTab = 'monte-carlo' | 'dispersion' | 'reactor' | 'decaimiento' | 'simulacion-fision';
-type MainView = 'landing' | 'reactor-nuclear' | 'medicina-nuclear' | 'curso';
+type MainView = 'landing' | 'modulos' | 'reactor-nuclear' | 'medicina-nuclear' | 'curso';
 type ReactorScreen = 'hub' | 'module';
+
+const MAIN_MODULES: Array<{
+  id: MainView;
+  title: string;
+  subtitle: string;
+  desc: string;
+  code: string;
+  color: string;
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+}> = [
+  {
+    id: 'reactor-nuclear',
+    title: 'Reactor Nuclear',
+    subtitle: 'Modulo principal tecnico',
+    desc: 'Contiene Monte Carlo, dispersion elastica, reactor simulacion, decaimiento y fision 3D.',
+    code: 'MAIN-01',
+    color: '#a2ff40',
+    icon: Zap,
+  },
+  {
+    id: 'medicina-nuclear',
+    title: 'Medicina Nuclear',
+    subtitle: 'Aplicacion clinica',
+    desc: 'Espacio para radiofarmacos, dosimetria, imagen molecular y actividad en contexto medico.',
+    code: 'MAIN-02',
+    color: '#22d3ee',
+    icon: FlaskConical,
+  },
+  {
+    id: 'curso',
+    title: 'Curso',
+    subtitle: 'Ruta guiada de aprendizaje',
+    desc: 'Contenido estructurado por unidades con practicas, visualizaciones y apoyo de estudio.',
+    code: 'MAIN-03',
+    color: '#fbbf24',
+    icon: Box,
+  },
+];
 
 const REACTOR_SUBMODULES: Array<{
   id: ReactorTab;
@@ -60,9 +98,9 @@ const REACTOR_SUBMODULES: Array<{
   },
   {
     id: 'simulacion-fision',
-    title: 'Simulacion de Fision',
+    title: 'Simulacion Fision 3D',
     subtitle: 'Visualizacion interactiva',
-    desc: 'Escena de fision en tiempo real integrada desde la simulacion de Django.',
+    desc: 'Escena 3D WebGL con 150 átomos de Uranio, 7 capas orbitales y reacción en cadena.',
     code: 'SUB-05',
     color: '#f97316',
     icon: Box,
@@ -75,6 +113,10 @@ function App() {
   const [reactorScreen, setReactorScreen] = useState<ReactorScreen>('hub');
 
   const enterMainModule = (target: string) => {
+    if (target === 'modulos') {
+      setView('modulos');
+      return;
+    }
     if (target === 'reactor-nuclear') {
       setView('reactor-nuclear');
       setReactorScreen('hub');
@@ -89,7 +131,13 @@ function App() {
       return;
     }
 
-    if (target === 'monte-carlo' || target === 'dispersion' || target === 'reactor' || target === 'decaimiento' || target === 'simulacion-fision') {
+    if (
+      target === 'monte-carlo' ||
+      target === 'dispersion' ||
+      target === 'reactor' ||
+      target === 'decaimiento' ||
+      target === 'simulacion-fision'
+    ) {
       setTab(target as ReactorTab);
       setView('reactor-nuclear');
       setReactorScreen('module');
@@ -105,6 +153,63 @@ function App() {
         <div className="pointer-events-none fixed inset-0 scanline opacity-30" />
         <div className="relative z-10">
           <LandingPage onEnter={enterMainModule} />
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'modulos') {
+    return (
+      <div className="relative min-h-screen bg-navy-deep">
+        <div className="pointer-events-none fixed inset-0 circuit-grid opacity-30" />
+        <div className="pointer-events-none fixed inset-0 scanline opacity-20" />
+        <div className="relative z-10">
+          <header className="sticky top-0 z-50 border-b border-navy-border bg-navy-deep/90 backdrop-blur-lg">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+              <div>
+                <span className="hud-label">SELECCIONA UN MODULO</span>
+                <h1 className="mt-1 font-display text-xl font-bold text-white sm:text-2xl">Modulos principales</h1>
+              </div>
+              <button onClick={goHome} className="btn-primary">INICIO</button>
+            </div>
+          </header>
+
+          <main className="mx-auto max-w-7xl px-4 py-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {MAIN_MODULES.map((mod, i) => {
+                const Icon = mod.icon;
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => enterMainModule(mod.id)}
+                    className="module-card group text-left"
+                    style={{ animationDelay: `${i * 0.08}s` }}
+                  >
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="font-mono-tech text-[10px] text-[#7a9ab0]">{mod.code}</span>
+                      <span
+                        className="flex h-9 w-9 items-center justify-center border transition-all group-hover:scale-110"
+                        style={{ borderColor: `${mod.color}40`, backgroundColor: `${mod.color}10` }}
+                      >
+                        <Icon size={16} style={{ color: mod.color }} />
+                      </span>
+                    </div>
+                    <h3 className="font-display text-lg font-bold text-white transition-colors group-hover:text-reactor">
+                      {mod.title}
+                    </h3>
+                    <p className="mt-0.5 font-mono-tech text-[10px] uppercase tracking-wider" style={{ color: mod.color }}>
+                      {mod.subtitle}
+                    </p>
+                    <p className="mt-3 font-body text-sm leading-relaxed text-[#7a9ab0]">{mod.desc}</p>
+                    <div className="mt-4 flex items-center gap-1 font-mono-tech text-[10px] uppercase tracking-widest text-[#7a9ab0] transition-colors group-hover:text-reactor">
+                      ABRIR MODULO
+                      <ChevronRight size={12} className="transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </main>
         </div>
       </div>
     );

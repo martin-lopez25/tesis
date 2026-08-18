@@ -1,0 +1,345 @@
+{\rtf1\ansi\deff0{\fonttbl{\f0 Calibri;}}\fs22 # Manual del Proyecto Tesis (Django + React + Notebook)\\par 
+\\par 
+Fecha de corte: 2026-07-27\\par 
+\\par 
+Este documento resume todo lo implementado en el proyecto hasta la fecha: estructura, stack tecnico, librerias, endpoints, partes clave del codigo, flujo de ejecucion y troubleshooting.\\par 
+\\par 
+## 1. Objetivo del proyecto\\par 
+\\par 
+Proyecto academico de fisica nuclear con:\\par 
+\\par 
+- Backend API en Django REST.\\par 
+- Frontend web en React + Vite + TypeScript.\\par 
+- Migracion de logica desde notebook de Jupyter.\\par 
+- Modulos de simulacion: Monte Carlo, dispersion elastica, reactor, decaimiento, y visualizacion de fision.\\par 
+\\par 
+## 2. Estructura real del workspace\\par 
+\\par 
+```text\\par 
+c:/Users/jose.valdez/Downloads/tesis/\\par 
+  .venv/                       # entorno virtual externo (utilizado en algunas pruebas)\\par 
+  tesis/\\par 
+    backend/                   # backend Django\\par 
+      .venv/                   # entorno virtual principal del backend\\par 
+      api/\\par 
+      config/\\par 
+      db.sqlite3\\par 
+      manage.py\\par 
+    frontend/                  # frontend React web con Vite\\par 
+      src/\\par 
+      package.json\\par 
+      vite.config.ts\\par 
+    mobile/                    # app Expo legacy/opcional\\par 
+    tesis_lab_nuclear.ipynb    # notebook fuente\\par 
+    README.md\\par 
+```\\par 
+\\par 
+## 3. Arquitectura general\\par 
+\\par 
+```mermaid\\par 
+flowchart LR\\par 
+  U[Usuario en navegador] --> F[Frontend React Vite :5173]\\par 
+  F -->|/django/... proxy| B[Backend Django :8000]\\par 
+  B --> D[(SQLite db.sqlite3)]\\par 
+  B --> N[Logica cientifica migrada del notebook]\\par 
+```\\par 
+\\par 
+Notas:\\par 
+\\par 
+- En desarrollo, el frontend usa proxy de Vite para hablar con Django.\\par 
+- El backend expone endpoints REST y rutas HTML para simulacion/landing.\\par 
+\\par 
+## 4. Librerias utilizadas\\par 
+\\par 
+## 4.1 Backend Python (entorno backend/.venv)\\par 
+\\par 
+Listado obtenido con pip list --format=freeze:\\par 
+\\par 
+- asgiref==3.11.1\\par 
+- contourpy==1.3.3\\par 
+- cycler==0.12.1\\par 
+- Django==6.0.7\\par 
+- django-cors-headers==4.9.0\\par 
+- djangorestframework==3.17.1\\par 
+- fonttools==4.63.0\\par 
+- kiwisolver==1.5.0\\par 
+- matplotlib==3.11.0\\par 
+- mpmath==1.3.0\\par 
+- networkx==3.6.1\\par 
+- numpy==2.5.1\\par 
+- packaging==26.2\\par 
+- pandas==3.0.3\\par 
+- pillow==12.3.0\\par 
+- pip==26.1.2\\par 
+- pyparsing==3.3.2\\par 
+- python-dateutil==2.9.0.post0\\par 
+- radioactivedecay==0.6.1\\par 
+- scipy==1.18.0\\par 
+- six==1.17.0\\par 
+- sqlparse==0.5.5\\par 
+- sympy==1.14.0\\par 
+- tzdata==2026.3\\par 
+\\par 
+Paquetes clave funcionales:\\par 
+\\par 
+- Django: framework backend.\\par 
+- djangorestframework: API REST.\\par 
+- django-cors-headers: CORS para frontend local.\\par 
+- radioactivedecay: calculo de cadenas de decaimiento.\\par 
+- matplotlib/pillow: exportacion y render de imagenes de cadena.\\par 
+- numpy/scipy/pandas: soporte numerico/cientifico.\\par 
+\\par 
+## 4.2 Frontend web (frontend/package.json)\\par 
+\\par 
+Dependencias:\\par 
+\\par 
+- react\\par 
+- react-dom\\par 
+- @react-three/fiber\\par 
+- @react-three/drei\\par 
+- three\\par 
+- recharts\\par 
+- lucide-react\\par 
+\\par 
+DevDependencies (tooling):\\par 
+\\par 
+- vite\\par 
+- @vitejs/plugin-react\\par 
+- typescript\\par 
+- eslint + plugins\\par 
+- tailwindcss + postcss + autoprefixer\\par 
+\\par 
+## 4.3 Mobile legacy (mobile/package.json)\\par 
+\\par 
+- expo\\par 
+- react-native\\par 
+- react-native-web\\par 
+- react, react-dom\\par 
+\\par 
+Se mantiene como modulo legado; el producto principal actual es frontend web.\\par 
+\\par 
+## 5. Configuracion clave\\par 
+\\par 
+## 5.1 Django settings\\par 
+\\par 
+- DB: SQLite local (db.sqlite3).\\par 
+- Apps habilitadas: api, rest_framework, corsheaders.\\par 
+- CORS permitido para localhost/127.0.0.1 en puertos 5173, 8081, 19006.\\par 
+\\par 
+Referencia:\\par 
+\\par 
+- backend/config/settings.py\\par 
+\\par 
+## 5.2 Enrutamiento principal\\par 
+\\par 
+- Raiz / y /principal/ renderiza pagina principal.\\par 
+- /fision/ renderiza simulacion de fision.\\par 
+- /api/ incluye rutas REST del app api.\\par 
+\\par 
+Referencia:\\par 
+\\par 
+- backend/config/urls.py\\par 
+- backend/api/urls.py\\par 
+\\par 
+## 5.3 Proxy frontend -> backend\\par 
+\\par 
+El frontend usa prefijo /django y lo reescribe hacia Django.\\par 
+\\par 
+Config actual correcta:\\par 
+\\par 
+- target: http://127.0.0.1:8000\\par 
+\\par 
+Referencia:\\par 
+\\par 
+- frontend/vite.config.ts\\par 
+\\par 
+## 6. Endpoints implementados (backend/api/views.py)\\par 
+\\par 
+Health y utilidades:\\par 
+\\par 
+- GET /api/health/\\par 
+\\par 
+Fisica basica migrada:\\par 
+\\par 
+- POST /api/energia-final/\\par 
+- POST /api/monte-carlo/\\par 
+\\par 
+Simulaciones usadas por frontend nuevo:\\par 
+\\par 
+- POST /api/simulations/monte-carlo-fission/\\par 
+- POST /api/simulations/scattering-elastic/\\par 
+- POST /api/simulations/radioactive-decay/\\par 
+- POST /api/simulations/radioactive-decay-chain-export/\\par 
+- GET /api/simulations/radioactive-decay-chain-image/\\par 
+\\par 
+Paginas HTML integradas:\\par 
+\\par 
+- GET /api/fision/\\par 
+- GET /api/principal/\\par 
+\\par 
+## 7. Partes clave del codigo (resumen)\\par 
+\\par 
+## 7.1 Backend scientific core\\par 
+\\par 
+Archivo principal:\\par 
+\\par 
+- backend/api/views.py\\par 
+\\par 
+Bloques importantes:\\par 
+\\par 
+- Extraccion de HTML desde notebook:\\par 
+  - _extract_html_from_notebook_variable\\par 
+  - _extract_html_fision_from_notebook\\par 
+  - _extract_html_principal_from_notebook\\par 
+- Formula energia final:\\par 
+  - energia_final_formula\\par 
+- Monte Carlo base:\\par 
+  - monte_carlo_formula\\par 
+  - _poisson\\par 
+- Endpoints API con @api_view para cada modulo.\\par 
+\\par 
+## 7.2 Frontend app shell y modulos\\par 
+\\par 
+Archivo principal de composicion:\\par 
+\\par 
+- frontend/src/App.tsx\\par 
+\\par 
+Secciones funcionales:\\par 
+\\par 
+- frontend/src/sections/MonteCarloSection.tsx\\par 
+- frontend/src/sections/ElasticScatteringSection.tsx\\par 
+- frontend/src/sections/DecaySection.tsx\\par 
+- frontend/src/sections/ReactorSection.tsx\\par 
+- frontend/src/sections/Simulation3DSection.tsx\\par 
+\\par 
+## 7.3 Manejo de fetch y parse JSON\\par 
+\\par 
+Mejora aplicada:\\par 
+\\par 
+- Antes: se llamaba res.json() directo.\\par 
+- Ahora: se hace res.text() y parse seguro con mensajes claros.\\par 
+\\par 
+Errores amigables agregados:\\par 
+\\par 
+- Respuesta vacia del servidor (HTTP ...)\\par 
+- Respuesta invalida del servidor (HTTP ...)\\par 
+\\par 
+Archivos ajustados:\\par 
+\\par 
+- frontend/src/sections/MonteCarloSection.tsx\\par 
+- frontend/src/sections/ElasticScatteringSection.tsx\\par 
+- frontend/src/sections/DecaySection.tsx\\par 
+\\par 
+## 8. Error que se corrigio hoy\\par 
+\\par 
+Error observado:\\par 
+\\par 
+- Failed to execute 'json' on 'Response': Unexpected end of JSON input\\par 
+\\par 
+Causa raiz:\\par 
+\\par 
+- El proxy de Vite apuntaba a 8001 mientras Django corria en 8000.\\par 
+- Resultado: 502 o cuerpo vacio en algunas respuestas, luego fallaba res.json().\\par 
+\\par 
+Correccion aplicada:\\par 
+\\par 
+- frontend/vite.config.ts cambio de 8001 -> 8000 en /django, /fision y /principal.\\par 
+- Endurecimiento del parse de respuestas en secciones frontend.\\par 
+\\par 
+Validacion posterior:\\par 
+\\par 
+- GET http://127.0.0.1:5173/django/api/health/ devuelve JSON correcto.\\par 
+- POST de simulacion devuelve JSON correcto.\\par 
+- npm run build en frontend compila sin errores.\\par 
+\\par 
+## 9. Como ejecutar todo (paso a paso)\\par 
+\\par 
+## 9.1 Backend Django\\par 
+\\par 
+Desde cualquier ruta:\\par 
+\\par 
+```powershell\\par 
+& "c:/Users/jose.valdez/Downloads/tesis/tesis/backend/.venv/Scripts/python.exe" "c:/Users/jose.valdez/Downloads/tesis/tesis/backend/manage.py" runserver 127.0.0.1:8000\\par 
+```\\par 
+\\par 
+## 9.2 Frontend web\\par 
+\\par 
+```powershell\\par 
+npm --prefix "c:/Users/jose.valdez/Downloads/tesis/tesis/frontend" run dev -- --host 127.0.0.1\\par 
+```\\par 
+\\par 
+## 9.3 URLs de trabajo\\par 
+\\par 
+- Frontend: http://127.0.0.1:5173\\par 
+- Backend: http://127.0.0.1:8000\\par 
+- Health via proxy: http://127.0.0.1:5173/django/api/health/\\par 
+- Health directo: http://127.0.0.1:8000/api/health/\\par 
+\\par 
+## 10. Flujo funcional recomendado para pruebas\\par 
+\\par 
+1. Levantar backend.\\par 
+2. Levantar frontend.\\par 
+3. Abrir frontend y ejecutar modulo Monte Carlo.\\par 
+4. Ejecutar Dispersion elastica.\\par 
+5. Ejecutar Decaimiento radiactivo.\\par 
+6. Confirmar que no hay errores de parse JSON en consola.\\par 
+\\par 
+## 11. Estado de base de datos y modelos\\par 
+\\par 
+- DB actual: SQLite local.\\par 
+- api/models.py sin modelos de negocio definidos aun.\\par 
+- api/tests.py aun sin pruebas funcionales.\\par 
+\\par 
+Implicacion:\\par 
+\\par 
+- El proyecto funciona principalmente como motor de simulacion y visualizacion, mas que como sistema transaccional persistente.\\par 
+\\par 
+## 12. Riesgos y pendientes\\par 
+\\par 
+- Falta cobertura de tests automatizados backend/frontend.\\par 
+- SECRET_KEY de desarrollo visible en settings (normal en local, no para produccion).\\par 
+- Migrar configuracion sensible a variables de entorno para despliegue real.\\par 
+- Definir modelos y autenticacion (si aplica a tesis final).\\par 
+\\par 
+## 13. Troubleshooting rapido\\par 
+\\par 
+1. Error No module named django:\\par 
+- Verificar que se use python de backend/.venv.\\par 
+\\par 
+2. Error Unexpected end of JSON input:\\par 
+- Revisar proxy en frontend/vite.config.ts (debe apuntar a puerto real de Django).\\par 
+- Verificar que Django este arriba en ese puerto.\\par 
+\\par 
+3. Frontend no conecta al backend:\\par 
+- Probar health por proxy y directo.\\par 
+- Revisar CORS_ALLOWED_ORIGINS en settings.py.\\par 
+\\par 
+4. Problemas con npx/npm en Windows:\\par 
+- Revisar PATH de sesion en VS Code.\\par 
+\\par 
+## 14. Referencias de archivos clave\\par 
+\\par 
+- README.md\\par 
+- backend/manage.py\\par 
+- backend/config/settings.py\\par 
+- backend/config/urls.py\\par 
+- backend/api/urls.py\\par 
+- backend/api/views.py\\par 
+- frontend/package.json\\par 
+- frontend/vite.config.ts\\par 
+- frontend/src/App.tsx\\par 
+- frontend/src/sections/MonteCarloSection.tsx\\par 
+- frontend/src/sections/ElasticScatteringSection.tsx\\par 
+- frontend/src/sections/DecaySection.tsx\\par 
+- tesis_lab_nuclear.ipynb\\par 
+\\par 
+## 15. Version corta para presentacion\\par 
+\\par 
+Si necesitas exponer rapido el proyecto:\\par 
+\\par 
+- Backend Django REST para calculos/simulaciones nucleares.\\par 
+- Frontend React para experiencia interactiva modular.\\par 
+- Logica cientifica migrada desde notebook a API mantenible.\\par 
+- Error de integracion frontend-backend resuelto (proxy/puertos).\\par 
+- Proyecto listo para agregar autenticacion, modelos y pruebas.\\par 
+}

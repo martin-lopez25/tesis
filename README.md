@@ -132,6 +132,46 @@ El backend permite ahora estos orígenes locales:
 
 La carpeta `mobile/` se mantiene como legado, pero el frontend principal ahora es `frontend/` (React web).
 
+## Arquitectura de actualizaciones de contenido
+
+La aplicacion Android funciona como una carcasa instalada una sola vez. Para evitar que los usuarios tengan que descargar un APK nuevo cada vez que se agreguen modulos, la app puede consultar un manifiesto remoto gratuito, por ejemplo en GitHub Pages, y descargar contenido nuevo cuando tenga internet.
+
+```mermaid
+flowchart TD
+	A[APK instalado en Android] --> B[Abre NuclearLab]
+	B --> C{Hay internet?}
+	C -->|No| D[Usa contenido offline incluido o guardado]
+	C -->|Si| E[Consulta version.json remoto]
+	E --> F{Version remota mayor?}
+	F -->|No| D
+	F -->|Si| G[Descarga modulos JSON y assets]
+	G --> H[Guarda contenido en almacenamiento local]
+	H --> I[Muestra la version mas reciente]
+```
+
+Ejemplo de manifiesto remoto:
+
+```json
+{
+	"contentVersion": 3,
+	"updatedAt": "2026-08-18",
+	"modules": [
+		{
+			"id": "reactor-avanzado",
+			"title": "Reactor avanzado",
+			"url": "modules/reactor-avanzado.json"
+		},
+		{
+			"id": "medicina-nuclear",
+			"title": "Medicina Nuclear",
+			"url": "modules/medicina-nuclear.json"
+		}
+	]
+}
+```
+
+Este enfoque sirve para actualizar modulos, textos, ejercicios, imagenes, presets, datos y configuraciones sin recompilar el APK. Cambios nativos de Android, permisos, dependencias o librerias nuevas siguen requiriendo publicar un APK/AAB nuevo con mayor `versionCode`.
+
 ## Proximos pasos sugeridos
 
 1. Implementar autenticacion (JWT con DRF).

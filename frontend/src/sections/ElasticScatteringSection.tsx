@@ -5,15 +5,7 @@ import NumberInput from '../components/NumberInput';
 import StatCard from '../components/StatCard';
 import LineChart from '../components/LineChart';
 
-type ScatteringResult = {
-  angles_deg: number[];
-  energy_after: number[];
-  energies_grid: number[];
-  cross_section: number[];
-  alpha: number;
-  min_energy: number;
-  max_energy_loss_fraction: number;
-};
+import { computeElasticScattering, type ScatteringResult } from '../lib/physics';
 
 export default function ElasticScatteringSection() {
   const [energy, setEnergy] = useState(2);
@@ -23,22 +15,14 @@ export default function ElasticScatteringSection() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScatteringResult | null>(null);
 
-  const run = async () => {
+  const run = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/django/api/simulations/scattering-elastic/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial_energy: energy, nucleus_mass: mass, num_points: points }),
-      });
-      const payload = (await res.json()) as ScatteringResult | { error: string };
-      if (!res.ok || 'error' in payload) {
-        throw new Error('error' in payload ? payload.error : `HTTP ${res.status}`);
-      }
+      const payload = computeElasticScattering(energy, mass, points);
       setResult(payload);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido');
+      setError(e instanceof Error ? e.message : 'Error al calcular dispersión');
     } finally {
       setLoading(false);
     }

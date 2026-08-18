@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Simulador de Fision Nuclear 3D</title>
+<style>
+    * {
+        border: 0;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    :root {
+        --hue: 184;
+        --bg: hsl(var(--hue), 10%, 90%);
+        --fg: hsl(var(--hue), 66%, 24%);
+        --primary: hsl(var(--hue), 66%, 44%);
+        --gradient: linear-gradient(145deg, hsl(var(--hue), 10%, 85%), hsl(var(--hue), 10%, 100%));
+    }
+    body { 
+        margin: 0; 
+        overflow: hidden; 
+        background: var(--bg);
+        font-family: "Nunito", sans-serif;
+        position: relative;
+    }
+    body.dark {
+        --bg: hsl(var(--hue), 10%, 10%);
+        --fg: hsl(var(--hue), 66%, 94%);
+        --gradient: linear-gradient(145deg, hsl(var(--hue), 10%, 15%), hsl(var(--hue), 10%, 30%));
+    }
+    #app { 
+        width: 100%; 
+        height: 100vh; 
+    }
+    .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 20;
+        background: var(--gradient);
+        color: var(--fg);
+        padding: 8px 16px;
+        cursor: pointer;
+        font-family: "Nunito", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        border-radius: 1.5em;
+        box-shadow: -0.5em -0.5em 1.5em hsl(0, 0%, 100%), 0.5em 0.5em 1.5em hsl(var(--hue), 5%, 65%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .back-btn:active {
+        transform: scale(0.95);
+    }
+    .controls {
+        position: absolute;
+        top: 20px;
+        left: 120px;
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+    }
+    button {
+        padding: 8px 16px;
+        background: var(--gradient);
+        color: var(--fg);
+        border: none;
+        cursor: pointer;
+        font-family: "Nunito", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 1.5em;
+        box-shadow: -0.5em -0.5em 1.5em hsl(0, 0%, 100%), 0.5em 0.5em 1.5em hsl(var(--hue), 5%, 65%);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    button:active {
+        transform: scale(0.95);
+    }
+    .info {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        color: var(--fg);
+        background: var(--gradient);
+        padding: 12px 16px;
+        font-family: "Nunito", sans-serif;
+        font-size: 12px;
+        z-index: 10;
+        border-radius: 1.5em;
+        max-width: 280px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .info h3 {
+        margin: 0 0 8px 0;
+        color: var(--primary);
+    }
+    .stats {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: var(--fg);
+        background: var(--gradient);
+        padding: 12px 16px;
+        font-family: "Nunito", sans-serif;
+        font-size: 12px;
+        z-index: 10;
+        border-radius: 1.5em;
+        min-width: 180px;
+        text-align: right;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .stats h3 {
+        margin: 0 0 8px 0;
+        color: var(--primary);
+        text-align: left;
+    }
+    .stats .value {
+        color: hsl(3, 90%, 55%);
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .warning {
+        color: hsl(3, 90%, 55%);
+        animation: pulse 1s infinite;
+        margin-top: 8px;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    /* Lightsaber Switch */
+    .scene {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 30;
+    }
+    .images {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .switch {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 80px;
+        cursor: pointer;
+    }
+    .switch input {
+        position: absolute;
+        opacity: 0;
+    }
+    .track {
+        position: relative;
+        width: 72px;
+        height: 24px;
+        background: #2c2c2c;
+        border-radius: 60px;
+        transition: 0.3s;
+        box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+    }
+    body.dark .track {
+        background: #1a1a1a;
+    }
+    .thumb {
+        position: absolute;
+        top: -6px;
+        left: -6px;
+        width: 36px;
+        height: 36px;
+        transition: 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    input:checked + .track .thumb {
+        left: calc(100% - 36px + 6px);
+    }
+    .lightsaber {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 4px;
+    }
+    .lightsaber .light {
+        width: 20px;
+        height: 3px;
+        background: #00ff9c;
+        border-radius: 4px;
+        box-shadow: 0 0 4px #00ff9c;
+    }
+    .lightsaber .dark {
+        width: 20px;
+        height: 3px;
+        background: #ff3366;
+        border-radius: 4px;
+        box-shadow: 0 0 4px #ff3366;
+    }
+    .lightsaber .grip {
+        width: 22px;
+        height: 10px;
+        background: #555;
+        border-radius: 4px;
+    }
+    .circle {
+        width: 36px;
+        height: 36px;
+        background: #1a1a1a;
+        border-radius: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: 0.2s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    body.dark .circle {
+        background: #2a2a2a;
+    }
+    .sub-circle {
+        width: 28px;
+        height: 28px;
+        background: #2c2c2c;
+        border-radius: 100%;
+    }
+    body.dark .sub-circle {
+        background: #3a3a3a;
+    }
+    .side {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: 0.2s;
+        transform: scale(0);
+    }
+    input:checked + .track .thumb .dark-side {
+        transform: scale(1);
+    }
+    input:not(:checked) + .track .thumb .light-side {
+        transform: scale(1);
+    }
+    .light-side .top {
+        position: absolute;
+        top: 4px;
+        display: flex;
+        gap: 4px;
+    }
+    .light-side .top .left,
+    .light-side .top .right {
+        width: 3px;
+        height: 3px;
+        background: #ffcc00;
+        border-radius: 100%;
+    }
+    .light-side .center {
+        display: flex;
+        gap: 2px;
+    }
+    .light-side .center div {
+        width: 2px;
+        height: 10px;
+        background: #ffcc00;
+        border-radius: 2px;
+    }
+    .light-side .bottom {
+        position: absolute;
+        bottom: 4px;
+    }
+    .light-side .bottom .line {
+        width: 12px;
+        height: 2px;
+        background: #ffcc00;
+        border-radius: 2px;
+    }
+    .dark-side .circle {
+        background: #ff3366;
+    }
+    .dark-side .sub-circle {
+        background: #cc0033;
+    }
+</style>
+</head>
+<body>
+    <div class="scene">
+        <div class="images">
+            <img src="https://assets.codepen.io/907471/darkside.svg?v42" class="dark">
+            <img src="https://assets.codepen.io/907471/lightside.svg?v42" class="light">
+        </div>
+        <label class="switch" id="switch" aria-label="Switch">
+            <input type="checkbox" id="themeToggleFision">
+            <div class="track">
+                <div class="lightsaber">
+                    <div class="light"></div>
+                    <div class="grip"></div>
+                    <div class="dark"></div>
+                </div>
+                <div class="thumb">
+                    <div class="side dark-side">
+                        <div class="circle">
+                            <div class="sub-circle"></div>
+                        </div>
+                    </div>
+                    <div class="side light-side">
+                        <div class="circle">
+                            <div class="sub-circle"></div>
+                        </div>
+                        <div class="top">
+                            <div class="left"></div>
+                            <div class="right"></div>
+                        </div>
+                        <div class="center">
+                            <div class="item-1"></div>
+                            <div class="item-2"></div>
+                            <div class="item-3"></div>
+                            <div class="item-4"></div>
+                            <div class="item-5"></div>
+                        </div>
+                        <div class="bottom">
+                            <div class="line"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </label>
+    </div>
+    
+    <a href="/" class="back-btn">Volver</a>
+    <div class="controls">
+        <button id="fireBtn">Disparar</button>
+        <button id="resetBtn">Reiniciar</button>
+        <button id="chainBtn">Cadena</button>
+    </div>
+    <div class="stats">
+        <h3>Reactor</h3>
+        <p>Uranio: <span id="atomCount" class="value">0</span></p>
+        <p>Neutrones: <span id="neutronCount" class="value">0</span></p>
+        <p>Fisiones: <span id="fissionCount" class="value">0</span></p>
+        <p>Energia: <span id="energyReleased" class="value">0</span> MeV</p>
+        <div id="chainWarning" style="display:none;" class="warning">CADENA ACTIVA</div>
+    </div>
+    <div class="info">
+        <h3>Fision Nuclear</h3>
+        <p>n + U-235 -> Ba-141 + Kr-92 + 2-3 n</p>
+        <p>Energia: 200 MeV por fision</p>
+        <p>150 atomos | Arrastrar: rotar | Scroll: zoom</p>
+    </div>
+    <div id="app"></div>
+    <script>
+        const themeToggleFision = document.getElementById('themeToggleFision');
+        
+        function toggleThemeFision() {
+            if (themeToggleFision.checked) {
+                document.body.classList.add('dark');
+                localStorage.setItem('themeFision', 'dark');
+            } else {
+                document.body.classList.remove('dark');
+                localStorage.setItem('themeFision', 'light');
+            }
+        }
+        
+        themeToggleFision.addEventListener('change', toggleThemeFision);
+        
+        const savedThemeFision = localStorage.getItem('themeFision');
+        if (savedThemeFision === 'dark') {
+            document.body.classList.add('dark');
+            themeToggleFision.checked = true;
+        }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://esm.sh/three",
+    "three/addons/": "https://esm.sh/three/addons/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+let scene, camera, renderer, controls;
+let atoms = [];
+let neutrons = [];
+let fragments = [];
+let energyParticles = [];
+let fissionCount = 0;
+let totalEnergy = 0;
+let chainReactionActive = false;
+let chainReactionInterval = null;
+
+const ENERGY_PER_FISSION = 200;
+const NEUTRON_SPEED = 0.35;
+const FISSION_RADIUS = 1.3;
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x101018);
+    scene.fog = new THREE.FogExp2(0x101018, 0.0005);
+
+    camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+    camera.position.set(25, 20, 32);
+
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.getElementById("app").appendChild(renderer.domElement);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 1.2;
+    controls.target.set(0, 0, 0);
+
+    const ambientLight = new THREE.AmbientLight(0x222222);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 10, 7);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+    const backLight = new THREE.PointLight(0x4466ff, 0.3);
+    backLight.position.set(-5, 0, -5);
+    scene.add(backLight);
+    const fillLight = new THREE.PointLight(0xffaa66, 0.25);
+    fillLight.position.set(3, 5, 4);
+    scene.add(fillLight);
+    const rimLight = new THREE.PointLight(0xff66aa, 0.2);
+    rimLight.position.set(-3, 4, -4);
+    scene.add(rimLight);
+
+    createInitialAtoms();
+    animate();
+    setInterval(updateUI, 100);
+}
+
+const tex = new THREE.TextureLoader().load("https://threejs.org/examples/textures/sprites/disc.png");
+
+const createShell = (count, radius, color) => {
+    const pos = [];
+    const col = [];
+    const pointCount = Math.min(count * 6, 120);
+    for (let i = 0; i < pointCount; i++){
+        const r = radius + (Math.random() - 0.5) * 0.3;
+        const theta = Math.acos(2 * Math.random() - 1);
+        const phi = Math.random() * Math.PI * 2;
+        const x = r * Math.sin(theta) * Math.cos(phi);
+        const y = r * Math.sin(theta) * Math.sin(phi);
+        const z = r * Math.cos(theta);
+        pos.push(x, y, z);
+        const c = new THREE.Color(color);
+        const fade = 0.4 + Math.random() * 0.6;
+        col.push(c.r * fade, c.g * fade, c.b * fade);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({ size: 0.07, map: tex, transparent: true, vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    return new THREE.Points(geo, mat);
+};
+
+function createAtom(position, color = 0xff4466) {
+    const group = new THREE.Group();
+    const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), new THREE.MeshStandardMaterial({ color: color, emissive: 0x331100, emissiveIntensity: 0.15, metalness: 0.7, roughness: 0.3 }));
+    nucleus.castShadow = true;
+    group.add(nucleus);
+    const shells = [{n:2,r:1.0,color:0xff6688},{n:8,r:1.6,color:0xff7799},{n:18,r:2.3,color:0xff88aa},{n:32,r:3.0,color:0xff99bb},{n:21,r:3.8,color:0xffaacc},{n:9,r:4.7,color:0xffbbdd},{n:2,r:5.6,color:0xffccee}];
+    shells.forEach(s => { const c = createShell(s.n, s.r, s.color); group.add(c); });
+    group.userData = { clouds: shells.map((_,i)=>group.children[i+1]), type: "uranium" };
+    group.position.copy(position);
+    scene.add(group);
+    return group;
+}
+
+function createInitialAtoms() {
+    atoms.forEach(atom => scene.remove(atom));
+    atoms = [];
+    const positions = [];
+    const radius = 14;
+    for(let i = 0; i < 150; i++) {
+        let x, y, z, d;
+        do { x = (Math.random() - 0.5) * radius * 2; y = (Math.random() - 0.5) * radius * 1.5; z = (Math.random() - 0.5) * radius * 2; d = Math.sqrt(x*x + y*y + z*z); } while(d > radius);
+        positions.push(new THREE.Vector3(x, y, z));
+    }
+    positions.forEach(pos => atoms.push(createAtom(pos)));
+    fissionCount = 0;
+    totalEnergy = 0;
+    updateUI();
+}
+
+function createNeutron(position, direction, speed = NEUTRON_SPEED) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdd99, emissive: 0xff8844, emissiveIntensity: 0.8 }));
+    m.position.copy(position);
+    m.castShadow = true;
+    m.userData = { velocity: direction.clone().normalize().multiplyScalar(speed) };
+    scene.add(m);
+    neutrons.push(m);
+    updateUI();
+}
+
+function fission(atom, neutronPosition) {
+    const atomPos = atom.position.clone();
+    scene.remove(atom);
+    const idx = atoms.indexOf(atom);
+    if(idx !== -1) atoms.splice(idx, 1);
+    fissionCount++;
+    totalEnergy += ENERGY_PER_FISSION;
+    updateUI();
+    if(chainReactionActive && atoms.length > 0) document.getElementById("chainWarning").style.display = "block";
+    
+    const bariumGroup = new THREE.Group();
+    const baNuc = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24), new THREE.MeshStandardMaterial({ color: 0x66cc99, emissive: 0x226644, emissiveIntensity: 0.25 }));
+    bariumGroup.add(baNuc);
+    [{n:2,r:0.8,c:0x88ffaa},{n:8,r:1.25,c:0xaaffcc},{n:18,r:1.75,c:0xccffdd},{n:18,r:2.3,c:0xddffee},{n:8,r:2.9,c:0xeeffff},{n:2,r:3.5,c:0xaaffff}].forEach(s => bariumGroup.add(createShell(s.n, s.r, s.c)));
+    
+    const kryptonGroup = new THREE.Group();
+    const krNuc = new THREE.Mesh(new THREE.SphereGeometry(0.35, 24, 24), new THREE.MeshStandardMaterial({ color: 0xff9966, emissive: 0x442200, emissiveIntensity: 0.25 }));
+    kryptonGroup.add(krNuc);
+    [{n:2,r:0.7,c:0xffaa88},{n:8,r:1.1,c:0xffbb99},{n:18,r:1.6,c:0xffccaa},{n:8,r:2.1,c:0xffddbb}].forEach(s => kryptonGroup.add(createShell(s.n, s.r, s.c)));
+    
+    const dir = neutronPosition.clone().sub(atomPos).normalize();
+    bariumGroup.position.copy(atomPos.clone().add(dir.clone().multiplyScalar(1.5)));
+    kryptonGroup.position.copy(atomPos.clone().add(dir.clone().multiplyScalar(-1.5)));
+    bariumGroup.userData = { velocity: dir.clone().multiplyScalar(0.06) };
+    kryptonGroup.userData = { velocity: dir.clone().multiplyScalar(-0.06) };
+    scene.add(bariumGroup);
+    scene.add(kryptonGroup);
+    fragments.push(bariumGroup, kryptonGroup);
+    
+    const nCount = 2 + Math.floor(Math.random() * 2);
+    for(let i = 0; i < nCount; i++) {
+        const rd = new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2).normalize();
+        createNeutron(atomPos, rd, NEUTRON_SPEED * (chainReactionActive ? 1.15 : 1.0));
+    }
+    
+    for(let i = 0; i < 60; i++) {
+        const p = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), new THREE.MeshBasicMaterial({ color: [0xffaa44,0xff6644,0xffaa88][Math.floor(Math.random()*3)], transparent: true, blending: THREE.AdditiveBlending }));
+        p.position.copy(atomPos);
+        const a1 = Math.random() * Math.PI * 2, a2 = Math.random() * Math.PI * 2, sp = 0.12 + Math.random() * 0.18;
+        p.userData = { velocity: new THREE.Vector3(Math.sin(a1)*Math.cos(a2)*sp, Math.sin(a1)*Math.sin(a2)*sp, Math.cos(a1)*sp), life: 1.0, decay: 0.012 };
+        scene.add(p);
+        energyParticles.push(p);
+    }
+    
+    const explLight = new THREE.PointLight(0xff8844, 2.0, 20);
+    explLight.position.copy(atomPos);
+    scene.add(explLight);
+    let int = 2.0;
+    const li = setInterval(() => { int -= 0.25; explLight.intensity = int; if(int <= 0) { clearInterval(li); scene.remove(explLight); } }, 35);
+}
+
+function startChainReaction() {
+    if(chainReactionActive) return;
+    chainReactionActive = true;
+    document.getElementById("chainWarning").style.display = "block";
+    if(atoms.length > 0 && neutrons.length === 0) {
+        const start = new THREE.Vector3(0, 5, 25);
+        const target = atoms[Math.floor(Math.random() * atoms.length)].position;
+        createNeutron(start, new THREE.Vector3().subVectors(target, start), NEUTRON_SPEED * 1.2);
+    }
+    chainReactionInterval = setInterval(() => {
+        if(chainReactionActive && atoms.length > 0 && neutrons.length < 10) {
+            const ra = atoms[Math.floor(Math.random() * atoms.length)];
+            const start = new THREE.Vector3(ra.position.x + (Math.random()-0.5)*8, ra.position.y + (Math.random()-0.5)*6 + 6, ra.position.z + (Math.random()-0.5)*8 + 18);
+            createNeutron(start, new THREE.Vector3().subVectors(ra.position, start), NEUTRON_SPEED * 1.25);
+        }
+        if(atoms.length === 0 && chainReactionActive) stopChainReaction();
+    }, 1000);
+}
+
+function stopChainReaction() {
+    chainReactionActive = false;
+    document.getElementById("chainWarning").style.display = "none";
+    if(chainReactionInterval) { clearInterval(chainReactionInterval); chainReactionInterval = null; }
+}
+
+function resetSimulation() {
+    stopChainReaction();
+    neutrons.forEach(n => scene.remove(n));
+    fragments.forEach(f => scene.remove(f));
+    energyParticles.forEach(p => scene.remove(p));
+    atoms.forEach(a => scene.remove(a));
+    neutrons = []; fragments = []; energyParticles = [];
+    createInitialAtoms();
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById("atomCount").innerHTML = atoms.length;
+    document.getElementById("neutronCount").innerHTML = neutrons.length;
+    document.getElementById("fissionCount").innerHTML = fissionCount;
+    document.getElementById("energyReleased").innerHTML = totalEnergy.toFixed(0);
+    if(atoms.length === 0) document.getElementById("chainWarning").innerHTML = "COMPLETADA";
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    atoms.forEach(atom => { if(atom.userData && atom.userData.clouds) { atom.userData.clouds.forEach((c, i) => { c.rotation.y += 0.0008 * (i+1); c.rotation.x += 0.0005 * (i+1); }); } });
+    for(let i=fragments.length-1; i>=0; i--) { const f = fragments[i]; if(f.userData && f.userData.velocity) { f.position.add(f.userData.velocity); f.children.forEach(c => { if(c.isPoints) { c.rotation.y += 0.015; c.rotation.x += 0.01; } }); } if(Math.abs(f.position.x) > 35 || Math.abs(f.position.y) > 25 || Math.abs(f.position.z) > 35) { scene.remove(f); fragments.splice(i,1); } }
+    for(let i=energyParticles.length-1; i>=0; i--) { const p = energyParticles[i]; p.position.add(p.userData.velocity); p.userData.life -= p.userData.decay; const s = p.userData.life * 0.8; p.scale.set(s,s,s); p.material.opacity = p.userData.life; if(p.userData.life <= 0) { scene.remove(p); energyParticles.splice(i,1); } }
+    for(let i=neutrons.length-1; i>=0; i--) { const n = neutrons[i]; n.position.add(n.userData.velocity); n.material.emissiveIntensity = 0.5 + Math.sin(Date.now()*0.02)*0.5; let hit = false; for(let j=0; j<atoms.length; j++) { const a = atoms[j]; if(a && n.position.distanceTo(a.position) < FISSION_RADIUS) { fission(a, n.position); scene.remove(n); neutrons.splice(i,1); hit = true; break; } } if(!hit && (Math.abs(n.position.x) > 45 || Math.abs(n.position.y) > 35 || Math.abs(n.position.z) > 45)) { scene.remove(n); neutrons.splice(i,1); } }
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+document.getElementById("fireBtn").onclick = () => { if(atoms.length === 0) { alert("No quedan atomos. Reinicie."); return; } const start = new THREE.Vector3(0, 5, 28); const target = atoms[Math.floor(Math.random() * atoms.length)].position; createNeutron(start, new THREE.Vector3().subVectors(target, start)); };
+document.getElementById("resetBtn").onclick = resetSimulation;
+document.getElementById("chainBtn").onclick = startChainReaction;
+window.addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+init();
+</script>
+</body>
+</html>
