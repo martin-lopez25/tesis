@@ -74,7 +74,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
             </div>
 
             <a
-              href="/NuclearLab.apk"
+              href="https://media.githubusercontent.com/media/martin-lopez25/tesis/main/NuclearLab.apk"
               download="NuclearLab.apk"
               className="group flex items-center justify-between gap-3 rounded-xl border border-slate-border bg-white p-3 shadow-sm transition hover:border-techno hover:shadow-md"
               aria-label="Obtener APK de NuclearLab para Android"

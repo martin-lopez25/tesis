@@ -1,11 +1,12 @@
 // NuclearLab Service Worker - PWA Offline Caching
-const CACHE_NAME = 'nuclearlab-v1';
+const CACHE_NAME = 'nuclearlab-v2';
+const APP_BASE = self.registration.scope;
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/favicon.svg',
-  '/icons.svg',
+  APP_BASE,
+  new URL('index.html', APP_BASE).href,
+  new URL('manifest.webmanifest', APP_BASE).href,
+  new URL('favicon.svg', APP_BASE).href,
+  new URL('icons.svg', APP_BASE).href,
 ];
 
 self.addEventListener('install', (event) => {
@@ -56,7 +57,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       });
     }).catch(() => {
-      return caches.match('/index.html');
+      return caches.match(new URL('index.html', APP_BASE).href);
     })
   );
 });
