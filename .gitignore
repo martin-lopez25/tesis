@@ -1,0 +1,18 @@
+node_modules/
+dist/
+**/node_modules/
+**/dist/
+*.tsbuildinfo
+
+# Android/Gradle build outputs
+android/.gradle/
+android/**/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Local environment
+.env
+.env.*
+!.env.example

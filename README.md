@@ -1,180 +1,63 @@
-# Tesis - Django + React (Web)
+# NuclearLab · Laboratorio de Física Nuclear Interactiva
 
-Proyecto base con backend en Django REST y frontend en React web (Vite).
+Aplicación interactiva de simulación y laboratorio de física nuclear, diseñada para el estudio académico de reactores, cinética neutrónica, medicina nuclear y dosimetría clínica.
 
-## Estructura actual
+## ⚛️ Módulos Principales
 
-```text
-tesis/
-	backend/                # API Django
-		.venv/
-		api/
-		config/
-		db.sqlite3
-		manage.py
-	frontend/               # App React web con Vite
-		src/
-		package.json
-	mobile/                 # App React Native con Expo (legacy, opcional)
-	index.html              # Archivo original del proyecto
-	tesis_lab_nuclear.ipynb # Notebook original
-```
+### 1. Reactor Nuclear (MOD-01)
+- **Monte Carlo de Fisión (SUB-01):** Simulación estocástica de poblaciones neutrónicas multigeneración, cálculo de $k_{eff}$ medio, regímenes subcrítico, crítico y supercrítico, y muestreo de espectro de fisión de Watt.
+- **Dispersión Elástica Cinemática (SUB-02):** Choques neutrón-núcleo en sistemas LAB y Centro de Masas (CM), cálculo de parámetro $\alpha = ((A-1)/(A+1))^2$, distribución angular y sección eficaz resonante.
+- **Simulador Termohidráulico de Reactor (SUB-03):** Dinámica de barras de control, enriquecimiento de uranio, flujo de refrigerante, potencia térmica, generación de vapor, presión y potencia eléctrica en tiempo real.
+- **Decaimiento Radiactivo & Cadenas de Bateman (SUB-04):** Base de datos nuclear con más de 25 radioisótopos (Mo-99, Tc-99m, Xe-135, I-131, Cs-137, U-235, Pu-239, etc.), filiaciones sucesivas y curvas de actividad.
+- **Simulación Fisión 3D WebGL (SUB-05):** Visualizador 3D inmersivo (Three.js) con 150 átomos de Uranio, capas orbitales, colisiones neutrónicas y reacción en cadena animada.
 
-## Cambios realizados
+### 2. Medicina Nuclear & Radiofarmacia (MOD-02)
+- Calculadora dosimétrica de Vida Media Efectiva ($1/T_{eff} = 1/T_{física} + 1/T_{biológica}$).
+- Curvas de actividad remanente en MBq y mCi.
+- Catálogo clínico de radiofármacos diagnósticos (SPECT/PET) y terapéuticos (I-131, Lu-177, Sm-153).
 
-1. Se creo el backend Django en `backend/`.
-2. Se instalo y configuro Django REST Framework.
-3. Se instalo y configuro `django-cors-headers` para permitir consumo desde entorno local.
-4. Se agrego endpoint de prueba:
-	 - `GET /api/health/`
-	 - Respuesta: `{"message": "Backend Django funcionando", "status": "ok"}`
-5. Se migraron funciones del notebook `tesis_lab_nuclear.ipynb` a la API:
-	- `POST /api/energia-final/`
-	- `POST /api/monte-carlo/`
-6. Se creo la app React Native con Expo (template TypeScript) en `mobile/`.
-7. Se migro a React web con Vite en `frontend/`.
-8. Se conecto `frontend/src/App.tsx` al backend de Django.
-9. Se mejoro la interfaz de React web para mostrar:
-	 - Estado de backend
-	- Acceso al front original del notebook
-	- Formulario de energia final
-	- Simulacion monte carlo
+### 3. Curso Académico & Tesis (MOD-03)
+- **4 Unidades temáticas:** Interacción radiación-materia, transporte y moderación, cinética de reactores y leyes de desintegración.
+- **Test interactivo de autoevaluación:** Preguntas con retroalimentación inmediata y cálculo de puntaje.
+- **Modo Android / Escritorio:** Conmutador de interfaz con marco Android simulado para dispositivos móviles o estación de trabajo completa.
 
-## Archivos clave modificados
+---
 
-- `backend/config/settings.py`
-- `backend/config/urls.py`
-- `backend/api/views.py`
-- `backend/api/urls.py`
-- `frontend/src/App.tsx`
-- `frontend/src/App.css`
-- `tesis_lab_nuclear.ipynb` (fuente de la logica migrada)
+## 🛠️ Tecnologías Utilizadas
 
-## Requisitos
+- **Framework:** React 19 + TypeScript + Vite
+- **Estilos:** Tailwind CSS + M3 Dark Neon Nuclear Theme (Orbitron, Rajdhani, JetBrains Mono)
+- **Gráficos 3D:** Three.js + WebGL
+- **Visualización de Datos:** Recharts + Canvas Charts
+- **Iconografía:** Lucide React
+- **Motor de Física:** Módulo TypeScript 100% nativo offline (`src/lib/physics.ts`)
 
-- Python 3.13+
-- Node.js 20+ (recomendado)
-- npm
+---
 
-## Como ejecutar el proyecto
+## Como Ejecutar
 
-### 1) Backend Django
-
-Desde la raiz del proyecto (`tesis/`):
+Desde la raiz del repositorio (`tesis/`):
 
 ```powershell
-& "c:\Users\jose.valdez\Downloads\tesis\tesis\backend\.venv\Scripts\python.exe" "c:\Users\jose.valdez\Downloads\tesis\tesis\backend\manage.py" runserver 127.0.0.1:8000
+npm install
+npm run dev
 ```
 
-Backend disponible en:
-
-- http://127.0.0.1:8000/
-- http://127.0.0.1:8000/api/health/
-- http://127.0.0.1:8000/api/energia-final/
-- http://127.0.0.1:8000/api/monte-carlo/
-- http://127.0.0.1:8000/api/fision/
-
-### 1.1) Endpoints migrados desde el notebook
-
-`POST /api/energia-final/`
-
-Body JSON:
-
-```json
-{
-	"E": 2.5,
-	"A": 56,
-	"theta": 45
-}
-```
-
-`POST /api/monte-carlo/`
-
-Body JSON:
-
-```json
-{
-	"p": 0.7,
-	"n0": 10,
-	"pasos": 20,
-	"seed": 42
-}
-```
-
-`GET /api/fision/`
-
-- Abre una simulacion visual interactiva de fision nuclear.
-- Disponible desde navegador o con el boton "Abrir simulacion de fision" dentro de la app.
-- Esta ruta ahora carga el HTML_FISION original extraido de `tesis_lab_nuclear.ipynb`.
-
-### 2) Frontend React (web local)
-
-Desde cualquier ruta:
+La interfaz queda disponible en `http://localhost:3000`. Para validar el build web:
 
 ```powershell
-npm --prefix "c:\Users\jose.valdez\Downloads\tesis\tesis\frontend" run dev
+npm run build
 ```
 
-Frontend web disponible en:
+### APK para Android
 
-- http://localhost:5173
+Requiere Android Studio, Android SDK y el JDK incluido con Android Studio.
 
-### 2.1) CORS habilitado
-
-El backend permite ahora estos orígenes locales:
-
-- http://localhost:5173
-- http://127.0.0.1:5173
-- http://localhost:8081
-- http://127.0.0.1:8081
-
-## Nota sobre mobile
-
-La carpeta `mobile/` se mantiene como legado, pero el frontend principal ahora es `frontend/` (React web).
-
-## Arquitectura de actualizaciones de contenido
-
-La aplicacion Android funciona como una carcasa instalada una sola vez. Para evitar que los usuarios tengan que descargar un APK nuevo cada vez que se agreguen modulos, la app puede consultar un manifiesto remoto gratuito, por ejemplo en GitHub Pages, y descargar contenido nuevo cuando tenga internet.
-
-```mermaid
-flowchart TD
-	A[APK instalado en Android] --> B[Abre NuclearLab]
-	B --> C{Hay internet?}
-	C -->|No| D[Usa contenido offline incluido o guardado]
-	C -->|Si| E[Consulta version.json remoto]
-	E --> F{Version remota mayor?}
-	F -->|No| D
-	F -->|Si| G[Descarga modulos JSON y assets]
-	G --> H[Guarda contenido en almacenamiento local]
-	H --> I[Muestra la version mas reciente]
+```powershell
+npx cap sync android
+Push-Location android
+.\gradlew.bat assembleDebug
+Pop-Location
 ```
 
-Ejemplo de manifiesto remoto:
-
-```json
-{
-	"contentVersion": 3,
-	"updatedAt": "2026-08-18",
-	"modules": [
-		{
-			"id": "reactor-avanzado",
-			"title": "Reactor avanzado",
-			"url": "modules/reactor-avanzado.json"
-		},
-		{
-			"id": "medicina-nuclear",
-			"title": "Medicina Nuclear",
-			"url": "modules/medicina-nuclear.json"
-		}
-	]
-}
-```
-
-Este enfoque sirve para actualizar modulos, textos, ejercicios, imagenes, presets, datos y configuraciones sin recompilar el APK. Cambios nativos de Android, permisos, dependencias o librerias nuevas siguen requiriendo publicar un APK/AAB nuevo con mayor `versionCode`.
-
-## Proximos pasos sugeridos
-
-1. Implementar autenticacion (JWT con DRF).
-2. Crear modelos de negocio para la tesis.
-3. Agregar pantallas reales (login, dashboard, capturas).
-4. Preparar build Android con EAS cuando la app este estable.
+El APK de depuracion se genera en `android/app/build/outputs/apk/debug/app-debug.apk`. La portada descarga la copia publicada en `public/NuclearLab.apk`.

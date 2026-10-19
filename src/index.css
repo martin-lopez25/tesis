@@ -1,0 +1,203 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F4F7FA;
+    color: #17212B;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: 'Rajdhani', 'Inter', system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+
+  .font-mono-tech {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* =========================================================================
+     ÁTOMO EXISTENTE: PRESERVADO ÍNTEGRAMENTE CON EL NUEVO ESTILO CIENTÍFICO
+     ========================================================================= */
+  .atom-loader-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--atom-size, 300px);
+    height: var(--atom-size, 300px);
+    perspective: 900px;
+  }
+
+  .atom-loader-react {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    transform-style: preserve-3d;
+  }
+
+  /* Núcleo atómico central */
+  .atom-loader-react::after {
+    content: '';
+    position: absolute;
+    width: calc(var(--atom-size, 300px) * 0.12);
+    height: calc(var(--atom-size, 300px) * 0.12);
+    background: radial-gradient(circle, #F4C542 30%, #123B5D 100%);
+    box-shadow: 0 0 16px rgba(244, 197, 66, 0.6), 0 0 6px rgba(18, 59, 93, 0.4);
+    border-radius: 50%;
+  }
+
+  .atom-line {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  /* Órbita 1: Azul tecnológico (#1976D2) */
+  .atom-line-1 {
+    border-bottom: calc(var(--atom-size, 300px) * 0.025) solid #1976D2;
+    border-top: calc(var(--atom-size, 300px) * 0.025) solid #1976D2;
+    filter: drop-shadow(0 0 6px rgba(25, 118, 210, 0.5));
+    animation: atom-line1 3s linear infinite;
+  }
+
+  /* Órbita 2: Amarillo nuclear de acento (#F4C542) */
+  .atom-line-2 {
+    border-bottom: calc(var(--atom-size, 300px) * 0.025) solid #F4C542;
+    border-top: calc(var(--atom-size, 300px) * 0.025) solid #F4C542;
+    filter: drop-shadow(0 0 6px rgba(244, 197, 66, 0.5));
+    animation: atom-line2 4.2s linear infinite;
+  }
+
+  /* Órbita 3: Azul nuclear profundo (#123B5D) */
+  .atom-line-3 {
+    border-bottom: calc(var(--atom-size, 300px) * 0.025) solid #123B5D;
+    border-top: calc(var(--atom-size, 300px) * 0.025) solid #123B5D;
+    filter: drop-shadow(0 0 6px rgba(18, 59, 93, 0.5));
+    animation: atom-line3 5.4s linear infinite;
+  }
+
+  /* =========================================================================
+     TARJETAS Y PANELES CIENTÍFICOS
+     ========================================================================= */
+  .panel {
+    @apply relative rounded-xl border border-slate-border bg-white shadow-card transition-all duration-200;
+  }
+
+  .hud-label {
+    @apply font-mono-tech text-[11px] font-semibold uppercase tracking-wider text-slate-secondary;
+  }
+
+  /* =========================================================================
+     BOTONES PROFESIONALES
+     ========================================================================= */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-lg bg-accent-yellow px-5 py-2.5 font-display text-sm font-bold uppercase tracking-wider text-graphite shadow-sm transition-all duration-150 hover:bg-accent-hover hover:shadow-elevated active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-nuclear-deep px-5 py-2.5 font-display text-sm font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-150 hover:bg-nuclear-light hover:shadow-elevated active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-border bg-white px-4 py-2 font-display text-xs font-semibold uppercase tracking-wider text-nuclear-deep transition-all duration-150 hover:border-techno hover:bg-azure-light active:scale-[0.98];
+  }
+
+  /* =========================================================================
+     ENTRADAS DE DATOS Y FORMULARIOS
+     ========================================================================= */
+  .input-tech {
+    @apply w-full rounded-lg border border-slate-border bg-white px-3.5 py-2 font-mono-tech text-sm text-graphite outline-none transition-all focus:border-techno focus:ring-2 focus:ring-techno/20;
+  }
+
+  .slider-tech {
+    @apply h-2 w-full appearance-none cursor-pointer rounded-lg bg-slate-border outline-none transition-colors;
+  }
+
+  .slider-tech::-webkit-slider-thumb {
+    @apply h-4 w-4 appearance-none rounded-full bg-techno shadow-sm transition-transform hover:scale-125;
+  }
+
+  .tab-btn {
+    @apply relative flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 font-display text-xs font-bold uppercase tracking-wider transition-all duration-150 sm:text-sm;
+  }
+
+  .tab-btn-inactive {
+    @apply text-slate-secondary hover:bg-canvas hover:text-nuclear-deep;
+  }
+
+  .tab-btn-active {
+    @apply bg-azure-light text-techno shadow-sm;
+  }
+
+  .module-card {
+    @apply relative cursor-pointer overflow-hidden rounded-xl border border-slate-border bg-white p-6 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-techno/40 hover:shadow-elevated;
+  }
+
+  .module-card::after {
+    content: '';
+    @apply absolute bottom-0 left-0 h-1 w-0 bg-techno transition-all duration-300;
+  }
+
+  .module-card:hover::after {
+    @apply w-full;
+  }
+}
+
+@layer utilities {
+  .dot-grid-light {
+    background-image: radial-gradient(circle, rgba(18, 59, 93, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.35s ease-out both;
+  }
+}
+
+@keyframes atom-line1 {
+  0% { transform: rotateZ(120deg) rotateX(66deg) rotateZ(0deg); }
+  100% { transform: rotateZ(120deg) rotateX(66deg) rotateZ(360deg); }
+}
+
+@keyframes atom-line2 {
+  0% { transform: rotateZ(240deg) rotateX(66deg) rotateZ(0deg); }
+  100% { transform: rotateZ(240deg) rotateX(66deg) rotateZ(360deg); }
+}
+
+@keyframes atom-line3 {
+  0% { transform: rotateZ(360deg) rotateX(66deg) rotateZ(0deg); }
+  100% { transform: rotateZ(360deg) rotateX(66deg) rotateZ(360deg); }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
