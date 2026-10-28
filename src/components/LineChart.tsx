@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface LineSeries {
   name: string;
@@ -18,7 +18,7 @@ interface LineChartProps {
   showLegend?: boolean;
 }
 
-const W = 760;
+const DEFAULT_W = 760;
 const PADDING = { top: 20, right: 20, bottom: 44, left: 60 };
 
 export default function LineChart({
@@ -32,9 +32,24 @@ export default function LineChart({
   showLegend = true,
 }: LineChartProps) {
   const [phase, setPhase] = useState(0);
+  const [chartWidth, setChartWidth] = useState(DEFAULT_W);
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const W = Math.max(240, Math.min(DEFAULT_W, chartWidth));
   const H = height;
   const plotW = W - PADDING.left - PADDING.right;
   const plotH = H - PADDING.top - PADDING.bottom;
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const nextWidth = Math.floor(entry.contentRect.width);
+      if (nextWidth > 0) setChartWidth(nextWidth);
+    });
+    observer.observe(chart);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -83,7 +98,7 @@ export default function LineChart({
       yTicks.push({ y, label });
     }
 
-    const xTickCount = Math.min(8, Math.max(2, n - 1));
+    const xTickCount = Math.min(8, Math.max(1, Math.floor(plotW / 48)), Math.max(1, n - 1));
     const xTicks: { x: number; label: string }[] = [];
     for (let i = 0; i <= xTickCount; i++) {
       const idx = Math.round((i / xTickCount) * (n - 1));
@@ -116,8 +131,11 @@ export default function LineChart({
     });
   }, [series, phase, n, xStep, transform, plotH]);
 
+  const xAxisFontSize = Math.min(11, Math.max(8, plotW / Math.max(1, xLabel.length * 0.56)));
+  const yAxisFontSize = Math.min(11, Math.max(8, plotH / Math.max(1, yLabel.length * 0.56)));
+
   return (
-    <div className="w-full bg-white rounded-xl border border-slate-border p-3 shadow-sm">
+    <div ref={chartRef} className="min-w-0 w-full max-w-full bg-white rounded-xl border border-slate-border p-3 shadow-sm">
       {showLegend && series.length > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-3 mb-2 px-2 text-xs font-mono-tech">
           {series.map((s) => (
@@ -129,7 +147,7 @@ export default function LineChart({
         </div>
       )}
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full max-w-full" preserveAspectRatio="xMidYMid meet">
         {/* Subtle grid lines */}
         {yTicks.map((t, i) => (
           <g key={`y${i}`}>
@@ -183,7 +201,7 @@ export default function LineChart({
           y={H - 6}
           textAnchor="middle"
           className="font-mono-tech"
-          fontSize="11"
+          fontSize={xAxisFontSize}
           fill="#123B5D"
           fontWeight="600"
         >
@@ -196,7 +214,7 @@ export default function LineChart({
           textAnchor="middle"
           transform={`rotate(-90 14 ${PADDING.top + plotH / 2})`}
           className="font-mono-tech"
-          fontSize="11"
+          fontSize={yAxisFontSize}
           fill="#123B5D"
           fontWeight="600"
         >

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { ARButton } from 'three/examples/jsm/webxr/ARButton.js';
 
 interface ParticleData {
   velocity: THREE.Vector3;
@@ -519,30 +518,16 @@ export default function Simulation3DSection() {
     // Exact Dark Navy/Black Space Scene from Notebook (0x101018)
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x101018);
-    // Para AR, el fondo debe ser transparente
-    const isARSupported = 'xr' in navigator;
-
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
     camera.position.set(25, 20, 32);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.xr.enabled = true; // Habilitar XR
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
-
-    if (isARSupported) {
-      const arButton = ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: container }
-      });
-      arButton.style.bottom = '80px'; // Ajustar posición para no tapar otros controles
-      container.appendChild(arButton);
-    }
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;

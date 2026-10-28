@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import pwrSimulationVideo from '../../Simulador de Reactor Nuclear PWR/gemini_generated_video_3ecf3229.mp4';
 import {
-  RotateCcw,
   Volume2,
   VolumeX,
   Image as ImageIcon,
@@ -9,8 +8,6 @@ import {
   Box,
 } from 'lucide-react';
 import Panel from '../components/Panel';
-import Slider from '../components/Slider';
-import { type ReactorParams } from '../lib/physics';
 
 const pwrImageAssets = import.meta.glob<string>(
   '../../Simulador de Reactor Nuclear PWR/*.png',
@@ -43,13 +40,6 @@ const PWR_IMAGES = PWR_IMAGE_FILES.map((image, index) => {
   return { ...image, number: index + 1, src: asset?.src ?? '' };
 });
 
-const DEFAULT_PARAMS: ReactorParams = {
-  controlRods: 50,
-  enrichment: 4.5,
-  coolantFlow: 1200,
-  turbineEfficiency: 0.85,
-};
-
 interface ReactorSectionProps {
   isNativeApk: boolean;
 }
@@ -58,12 +48,6 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
   const [sequenceStage, setSequenceStage] = useState<'video' | 'image' | 'model'>('video');
   const [videoMuted, setVideoMuted] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [params, setParams] = useState<ReactorParams>(DEFAULT_PARAMS);
-
-  const update = <K extends keyof ReactorParams>(key: K, value: ReactorParams[K]) =>
-    setParams((current) => ({ ...current, [key]: value }));
-
-  const reset = () => setParams(DEFAULT_PARAMS);
   const firstPwrImage = PWR_IMAGES[0];
   const selectedImage = PWR_IMAGES[selectedImageIndex];
   const displayedImage = isNativeApk ? selectedImage : firstPwrImage;
@@ -79,7 +63,7 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
             Simulador de Reactor Nuclear PWR
           </h2>
           <p className="mt-1 font-body text-xs text-slate-secondary">
-            Control de reactividad mediante barras de control, balance de potencia térmica, circuito de vapor y generación eléctrica.
+            Vista general de los sistemas principales de la central PWR, el circuito de vapor y la generación eléctrica.
           </p>
           <p className="mt-2 font-mono-tech text-[10px] text-slate-secondary sm:text-xs">
             Crédito:{' '}
@@ -96,87 +80,20 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        <div>
-          <Panel title="Controles Operativos" badge="BARRAS & FLUJO" accent="nuclear">
-            <div className="space-y-4">
-              <div className="rounded-lg border border-slate-border bg-slate-50 p-3">
-                <Slider
-                  label="Extracción Barras de Control"
-                  value={params.controlRods}
-                  min={0}
-                  max={100}
-                  step={1}
-                  unit="%"
-                  onChange={(value) => update('controlRods', value)}
-                  accent="reactor"
-                />
-                <span className="mt-1 block text-[10px] text-slate-secondary">
-                  0% = Totalmente insertadas (Parada) · 100% = Extraídas (Máxima reactividad)
-                </span>
-              </div>
-
-              <Slider
-                label="Enriquecimiento U-235"
-                value={params.enrichment}
-                min={0.7}
-                max={20}
-                step={0.1}
-                display={(value) => value.toFixed(1)}
-                unit="%"
-                onChange={(value) => update('enrichment', value)}
-                accent="amber"
-              />
-
-              <Slider
-                label="Caudal de Refrigerante"
-                value={params.coolantFlow}
-                min={100}
-                max={3000}
-                step={50}
-                display={(value) => value.toFixed(0)}
-                unit=" kg/s"
-                onChange={(value) => update('coolantFlow', value)}
-                accent="cyan"
-              />
-
-              <Slider
-                label="Eficiencia de Turbina"
-                value={params.turbineEfficiency}
-                min={0.3}
-                max={0.98}
-                step={0.01}
-                display={(value) => `${(value * 100).toFixed(0)}%`}
-                unit=""
-                onChange={(value) => update('turbineEfficiency', value)}
-              />
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={reset}
-                  className="rounded-lg border border-slate-border bg-white px-3 py-2 text-slate-secondary shadow-sm hover:border-techno hover:text-techno"
-                  title="Reiniciar a valores nominales"
-                >
-                  <RotateCcw size={16} />
-                </button>
-              </div>
-            </div>
-          </Panel>
-        </div>
-
+      <div className="w-full">
         <Panel
           title={
             sequenceStage === 'video'
               ? 'Video de simulación PWR'
               : sequenceStage === 'image'
-                ? isNativeApk ? 'Galería de imágenes PWR' : 'Vista general de la central PWR'
+                ? 'Vista general de la central PWR'
                 : 'Modelo 3D interactivo PWR'
           }
           badge={sequenceStage === 'video' ? 'ANIMACIÓN' : sequenceStage === 'image' ? 'IMAGEN 01' : 'EXPLORACIÓN'}
           accent="nuclear"
           className="overflow-hidden"
         >
-          <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-border bg-[#0B253B]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-border bg-[#0B253B] sm:aspect-video">
             {!isNativeApk && (
               <iframe
                 aria-hidden={sequenceStage !== 'model'}
@@ -229,7 +146,7 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
                 <img
                   src={displayedImage.src}
                   alt={displayedImage.title}
-                  className="absolute inset-0 z-10 h-full w-full object-cover"
+                  className="absolute inset-0 z-10 h-full w-full object-contain"
                 />
                 {isNativeApk ? (
                   <div

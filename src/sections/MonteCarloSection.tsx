@@ -435,8 +435,8 @@ export default function MonteCarloSection() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-border bg-white p-3 shadow-sm overflow-x-auto">
-              <svg viewBox="0 0 760 280" className="w-full min-w-[700px]">
+            <div className="min-w-0 w-full rounded-xl border border-slate-border bg-white p-3 shadow-sm">
+              <svg viewBox="0 0 760 280" className="block h-auto w-full max-w-full">
                 {/* Subtle grid */}
                 {Array.from({ length: 6 }, (_, i) => i).map((i) => {
                   const y = 20 + i * 40;

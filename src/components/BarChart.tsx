@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface BarGroup {
   label: string;
@@ -14,7 +14,7 @@ interface BarChartProps {
   yLog?: boolean;
 }
 
-const W = 760;
+const DEFAULT_W = 760;
 const PADDING = { top: 20, right: 20, bottom: 44, left: 60 };
 
 export default function BarChart({
@@ -24,11 +24,26 @@ export default function BarChart({
   height = 280,
   yLog = false,
 }: BarChartProps) {
+  const [chartWidth, setChartWidth] = useState(DEFAULT_W);
+  const chartRef = useRef<HTMLDivElement | null>(null);
+  const W = Math.max(240, Math.min(DEFAULT_W, chartWidth));
   const H = height;
   const plotW = W - PADDING.left - PADDING.right;
   const plotH = H - PADDING.top - PADDING.bottom;
 
-  const { yTicks, bars } = useMemo(() => {
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const nextWidth = Math.floor(entry.contentRect.width);
+      if (nextWidth > 0) setChartWidth(nextWidth);
+    });
+    observer.observe(chart);
+    return () => observer.disconnect();
+  }, []);
+
+  const { yTicks, bars, labelInterval } = useMemo(() => {
     const maxVal = Math.max(1, ...data.map((d) => d.value));
 
     const transform = (v: number): number => {
@@ -41,6 +56,8 @@ export default function BarChart({
     const n = Math.max(1, data.length);
     const barW = (plotW / n) * 0.65;
     const gap = (plotW / n) * 0.35;
+
+    const labelInterval = Math.max(1, Math.ceil(data.length / Math.max(1, Math.floor(plotW / 42))));
 
     const bars = data.map((d, i) => {
       const x = PADDING.left + i * (barW + gap) + gap / 2;
@@ -59,12 +76,15 @@ export default function BarChart({
       yTicks.push({ y, label });
     }
 
-    return { yTicks, bars };
+    return { yTicks, bars, labelInterval };
   }, [data, yLog, plotW, plotH]);
 
+  const xAxisFontSize = Math.min(11, Math.max(8, plotW / Math.max(1, xLabel.length * 0.56)));
+  const yAxisFontSize = Math.min(11, Math.max(8, plotH / Math.max(1, yLabel.length * 0.56)));
+
   return (
-    <div className="w-full bg-white rounded-xl border border-slate-border p-3 shadow-sm">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="xMidYMid meet">
+    <div ref={chartRef} className="min-w-0 w-full max-w-full bg-white rounded-xl border border-slate-border p-3 shadow-sm">
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full max-w-full" preserveAspectRatio="xMidYMid meet">
         {/* Subtle grid lines */}
         {yTicks.map((t, i) => (
           <g key={`y${i}`}>
@@ -106,13 +126,13 @@ export default function BarChart({
               rx="3"
               ry="3"
             />
-            {data.length <= 35 && (
+            {data.length <= 35 && (i % labelInterval === 0 || i === data.length - 1) && (
               <text
                 x={b.x + b.w / 2}
                 y={PADDING.top + plotH + 16}
                 textAnchor="middle"
                 className="font-mono-tech"
-                fontSize={data.length > 20 ? '8' : '10'}
+                fontSize={Math.min(data.length > 20 ? 8 : 10, Math.max(7, plotW / Math.max(1, data.length * 1.6)))}
                 fill="#64748B"
                 fontWeight="500"
               >
@@ -128,7 +148,7 @@ export default function BarChart({
           y={H - 6}
           textAnchor="middle"
           className="font-mono-tech"
-          fontSize="11"
+          fontSize={xAxisFontSize}
           fill="#123B5D"
           fontWeight="600"
         >
@@ -141,7 +161,7 @@ export default function BarChart({
           textAnchor="middle"
           transform={`rotate(-90 14 ${PADDING.top + plotH / 2})`}
           className="font-mono-tech"
-          fontSize="11"
+          fontSize={yAxisFontSize}
           fill="#123B5D"
           fontWeight="600"
         >

@@ -19,12 +19,14 @@ import ElasticScatteringSection from './sections/ElasticScatteringSection';
 import ReactorSection from './sections/ReactorSection';
 import DecaySection from './sections/DecaySection';
 import Simulation3DSection from './sections/Simulation3DSection';
+import MedicalPhysicsCourse, { MEDICAL_PHYSICS_MODULES, type MedicalCourseModuleId } from './sections/MedicalPhysicsCourseDetailed';
 import Panel from './components/Panel';
 import StatCard from './components/StatCard';
 import NumberInput from './components/NumberInput';
 import AtomLogo from './components/AtomLogo';
 
 type ReactorTab = 'monte-carlo' | 'dispersion' | 'reactor' | 'decaimiento' | 'simulacion-fision';
+type MedicalTab = MedicalCourseModuleId | 'clinical';
 type MainView = 'landing' | 'modulos' | 'reactor-nuclear' | 'medicina-nuclear' | 'curso';
 type ReactorScreen = 'hub' | 'module';
 
@@ -216,6 +218,7 @@ const QUIZ_QUESTIONS = [
 export default function App() {
   const [view, setView] = useState<MainView>('landing');
   const [tab, setTab] = useState<ReactorTab>('monte-carlo');
+  const [medicalTab, setMedicalTab] = useState<MedicalTab>('module-1');
   const [reactorScreen, setReactorScreen] = useState<ReactorScreen>('hub');
   const isNativeApk = Capacitor.isNativePlatform();
 
@@ -293,7 +296,7 @@ export default function App() {
       </div>
 
       <div className="relative z-10">
-        {view === 'landing' && <LandingPage onEnter={enterMainModule} />}
+        {view === 'landing' && <LandingPage onEnter={enterMainModule} isNativeApk={isNativeApk} />}
 
         {/* Modules Directory View */}
         {view === 'modulos' && (
@@ -504,6 +507,42 @@ export default function App() {
             </header>
 
             <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+              <div role="tablist" aria-label="Módulos de Física Médica" className="flex gap-2 overflow-x-auto border-b border-slate-border pb-3">
+                {MEDICAL_PHYSICS_MODULES.map((module) => (
+                  <button
+                    key={module.id}
+                    id={`tab-${module.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={medicalTab === module.id}
+                    aria-controls="medical-module-panel"
+                    onClick={() => setMedicalTab(module.id)}
+                    className={`tab-btn ${medicalTab === module.id ? 'tab-btn-active' : 'tab-btn-inactive'}`}
+                  >
+                    <span className="font-mono-tech text-[10px]">{module.roman}</span>
+                    <span>{module.shortTitle}</span>
+                  </button>
+                ))}
+                <button
+                  id="tab-clinical"
+                  type="button"
+                  role="tab"
+                  aria-selected={medicalTab === 'clinical'}
+                  aria-controls="medical-module-panel"
+                  onClick={() => setMedicalTab('clinical')}
+                  className={`tab-btn ${medicalTab === 'clinical' ? 'tab-btn-active' : 'tab-btn-inactive'}`}
+                >
+                  <span className="font-mono-tech text-[10px]">07</span>
+                  <span>Cinética clínica</span>
+                </button>
+              </div>
+
+              {medicalTab !== 'clinical' ? (
+                <div id="medical-module-panel" role="tabpanel" aria-labelledby={`tab-${medicalTab}`}>
+                  <MedicalPhysicsCourse moduleId={medicalTab} />
+                </div>
+              ) : (
+                <div id="medical-module-panel" role="tabpanel" aria-labelledby="tab-clinical" className="space-y-6">
               <Panel title="Dosimetría & Cinética de Radiofármacos" badge="CLÍNICA" accent="nuclear">
                 <p className="text-sm leading-relaxed text-graphite">
                   En medicina nuclear in vivo, los radioisótopos no encapsulados son depurados simultáneamente por desintegración física nuclear (<strong className="text-nuclear-deep">T_físico</strong>) y excreción biológica fisiológica renal o hepática (<strong className="text-nuclear-deep">T_biológico</strong>). La combinación de ambos determina la vida media efectiva y la dosis absorbida en órganos diana.
@@ -636,6 +675,8 @@ export default function App() {
                   </Panel>
                 </div>
               </div>
+                </div>
+              )}
             </main>
           </div>
         )}
@@ -794,12 +835,11 @@ export default function App() {
       </div>
 
       {/* Mobile Bottom Navigation Bar (Optimized for Handheld Thumb Touch) */}
+      {view !== 'landing' && (
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex sm:hidden items-center justify-around border-t border-slate-border bg-white/95 py-2 px-1 backdrop-blur-md shadow-lg">
         <button
           onClick={goHome}
-          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-mono-tech ${
-            view === 'landing' ? 'text-techno font-bold' : 'text-slate-secondary'
-          }`}
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-mono-tech text-slate-secondary"
         >
           <Home size={18} />
           <span>Inicio</span>
@@ -841,6 +881,7 @@ export default function App() {
           <span>Curso</span>
         </button>
       </nav>
+      )}
 
       {/* Institutional Academic Footer */}
       <footer className="mt-12 border-t border-slate-border bg-white">
