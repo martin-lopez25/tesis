@@ -389,18 +389,7 @@ Se consideran efectos estocásticos (carcinogénesis) y deterministas o reaccion
 
 ## Bailey · Capítulos 2, 3 y 19: Protección y Terapia con Radionúclidos
 
-La terapia con radiofármacos no sellados dirige la radiación al nivel celular. Entre los ejemplos del programa están ¹³¹I para tiroides, ¹⁷⁷Lu-DOTATATE/PSMA para tumores neuroendocrinos y cáncer de próstata, y ⁹⁰Y para radioembolización hepática. La dosimetría interna MIRD integra la actividad en el tiempo y considera la masa y fracción absorbida de cada órgano blanco.
-
-## Síntesis curricular de los seis módulos
-
-- Módulo I: estructura atómica/nuclear, clasificación de radiaciones, atenuación fotoeléctrica, Compton y producción de pares, bremsstrahlung y colisión. Fuentes: Podgorsak 1–2, Dance 1–2, Bailey 1.
-- Módulo II: fluencia, kerma, dosis, cavidades Bragg–Gray y Spencer–Attix, estándares ND,w, TRS-398 y calibración absoluta. Fuentes: Podgorsak 2 y 9, TRS-398 1–11, Dance 3.
-- Módulo III: producción de rayos X, MTF/DQE/NPS, CR/DR, CTDIvol/DLP, Doppler y MRI/espacio k. Fuente: Dance 4–15.
-- Módulo IV: ciclotrones y generadores, NaI(Tl)/CZT, gammacámara, SPECT/PET/TOF-PET, FBP/OSEM y MIRD. Fuente: Bailey 4–18.
-- Módulo V: LINAC, fotones/electrones (PDD/TMR), planificación 3D/IMRT, Monte Carlo/convolución y braquiterapia TG-43. Fuentes: Podgorsak 5–13 y 15, TRS-398.
-- Módulo VI: LQ, α/β, BED, MIRD terapéutico, ICRP/ALARA, blindajes y QA transversal. Fuentes: Podgorsak 12, 14 y 16; Dance 20–24; Bailey 2, 3 y 19.
-
-Este programa de seis módulos integra las cuatro fuentes para cubrir física teórica, formulaciones matemáticas y práctica metrológica estandarizada por el OIEA.`
+La terapia con radiofármacos no sellados dirige la radiación al nivel celular. Entre los ejemplos del programa están ¹³¹I para tiroides, ¹⁷⁷Lu-DOTATATE/PSMA para tumores neuroendocrinos y cáncer de próstata, y ⁹⁰Y para radioembolización hepática. La dosimetría interna MIRD integra la actividad en el tiempo y considera la masa y fracción absorbida de cada órgano blanco.`
   }
 ];
 
@@ -474,47 +463,6 @@ $A_D(t)$ es la actividad del hijo (⁹⁹ᵐTc), $A_P(t)$ es la actividad del pa
 - **Generador ⁶⁸Ge/⁶⁸Ga:** padre de vida muy larga ($T_{1/2}=271\,\mathrm{días}$) que produce el emisor de positrones ⁶⁸Ga ($T_{1/2}=68\,\mathrm{min}$), utilizado para marcar péptidos como ⁶⁸Ga-DOTATOC en diagnóstico PET de tumores neuroendocrinos.
 - **Generador ⁸²Sr/⁸²Rb:** para PET cardiaco ($T_{1/2}(⁸²Rb)=75\,\mathrm{s}$).
 - **Generador ⁹⁰Sr/⁹⁰Y:** padre de vida media de 28.5 años que produce el emisor $\beta^-$ puro ⁹⁰Y ($T_{1/2}=2.3\,\mathrm{días}$) para radioterapia dirigida.
-
-## 3. Instrumentación y Control de Calidad en la Radiofarmacia: El Activímetro
-
-El **activímetro** o calibrador de dosis es el instrumento primario en la radiofarmacia para medir la actividad del radiofármaco en viales o jeringas antes de su administración.
-
-~~~text
-  +-----------------------------------------------------------+
-  |              CÁMARA DE IONIZACIÓN REENTRANTE             |
-  |                                                           |
-  |   |======|   <-- Soporte Muestra (Vial / Jeringa)         |
-  |   |  ||  |                                                |
-  |   |  ||  |   <-- Revestimiento / Lucite (Perspex)         |
-  |   |  ||  |                                                |
-  |   +------+                                                |
-  |   | Gas  |   <-- Argón a Alta Presión (10 - 20 atm)       |
-  |   | Argón|                                                |
-  |   +------+                                                |
-  |   Electrodos Cilíndricos (+ / -) --> Electrómetro Digital|
-  +-----------------------------------------------------------+
-~~~
-
-### 3.1. Principio de Funcionamiento y Construcción
-
-- Es una **cámara de ionización cilíndrica de cavidad reentrante** (*well-type*), que proporciona una eficiencia geométrica cercana al 100% ($4\pi$ estereorradianes).
-- Está rellena de gas argón a alta presión (típicamente 10 a 20 atm) para maximizar la probabilidad de interacción de los fotones gamma.
-- Posee un tubo interno de Lucite/Perspex que previene la contaminación accidental del volumen activo de la cámara.
-- El electrómetro mide la corriente de ionización producida (del orden de pA a nA) y aplica factores de calibración digitales prefijados para cada radionúclido específico.
-
-### 3.2. Medición de Emisores $\beta$ Puros y Efecto de Frenado
-
-Para medir la actividad de emisores $\beta^-$ puros usados en terapia (⁹⁰Y, ³²P, ⁸⁹Sr), el activímetro detecta la radiación de frenado (*bremsstrahlung*) producida por la desaceleración de los electrones en las paredes del contenedor.
-
-- Dado que la fluencia de radiación de frenado es proporcional al cuadrado del número atómico ($Z^2$) del material absorbente, la medición es altamente sensible a la geometría, espesor y material del contenedor.
-- Se requiere utilizar viales de plástico o blindajes de **acrílico/Perspex** (material de bajo $Z$) para minimizar el *bremsstrahlung* y calibrar el instrumento de manera específica para cada geometría de jeringa o vial clínico.
-
-### 3.3. Controles de Calidad Obligatorios del Activímetro
-
-1. **Exactitud (*Accuracy*):** comparación periódica con fuentes patrones trazables a laboratorios de metrología (p. ej., ⁵⁷Co, ¹³⁷Cs, ⁶⁰Co). La desviación debe ser menor al $\pm10\%$.
-2. **Constancia (*Constancy*):** medición diaria con una fuente de vida media larga (p. ej., ¹³⁷Cs) en todas las escalas y ajustes de radionúclidos.
-3. **Linealidad (*Linearity*):** verificación de la respuesta en todo el intervalo clínico de actividades (desde actividades de elución de generador hasta dosis de paciente). Puede evaluarse por el método de decaimiento de un eluido fresco de ⁹⁹ᵐTc o mediante el método de blindajes concéntricos de plomo de atenuación conocida.
-4. **Respuesta Geométrica:** evaluación de variaciones en la lectura al medir un mismo volumen en contenedores de diferentes tamaños (jeringas de 1, 3 y 5 mL o viales de vidrio).
 
 ## 4. Pureza y Dispensación Clínica de Radiofármacos
 

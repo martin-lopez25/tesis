@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import pwrSimulationVideo from '../../Simulador de Reactor Nuclear PWR/gemini_generated_video_3ecf3229.mp4';
 import {
   Volume2,
@@ -6,6 +7,10 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Box,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import Panel from '../components/Panel';
 
@@ -48,9 +53,46 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
   const [sequenceStage, setSequenceStage] = useState<'video' | 'image' | 'model'>('video');
   const [videoMuted, setVideoMuted] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageScale, setImageScale] = useState(1);
+  const [imageExpanded, setImageExpanded] = useState(false);
   const firstPwrImage = PWR_IMAGES[0];
   const selectedImage = PWR_IMAGES[selectedImageIndex];
   const displayedImage = isNativeApk ? selectedImage : firstPwrImage;
+
+  const renderImageZoomControls = (expanded: boolean) => (
+    <div role="group" aria-label="Controles de zoom de la imagen" className="flex items-center gap-1 rounded-lg border border-white/20 bg-slate-950/85 p-1 text-white shadow-lg backdrop-blur-md">
+      <button
+        type="button"
+        onClick={() => setImageScale((scale) => Math.max(1, Number((scale - 0.25).toFixed(2))))}
+        disabled={imageScale <= 1}
+        aria-label="Alejar imagen"
+        title="Alejar imagen"
+        className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/15 disabled:opacity-40"
+      >
+        <ZoomOut size={18} />
+      </button>
+      <span className="min-w-10 text-center font-mono-tech text-[11px]">{Math.round(imageScale * 100)}%</span>
+      <button
+        type="button"
+        onClick={() => setImageScale((scale) => Math.min(3, Number((scale + 0.25).toFixed(2))))}
+        disabled={imageScale >= 3}
+        aria-label="Ampliar imagen"
+        title="Ampliar imagen"
+        className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/15 disabled:opacity-40"
+      >
+        <ZoomIn size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setImageExpanded(!expanded)}
+        aria-label={expanded ? 'Salir de pantalla completa' : 'Ver imagen a pantalla completa'}
+        title={expanded ? 'Salir de pantalla completa' : 'Ver imagen a pantalla completa'}
+        className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/15"
+      >
+        {expanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+      </button>
+    </div>
+  );
 
   return (
     <div className="animate-fade-up space-y-6">
@@ -93,7 +135,7 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
           accent="nuclear"
           className="overflow-hidden"
         >
-          <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-slate-border bg-[#0B253B] sm:aspect-video">
+          <div className={`relative overflow-hidden rounded-lg border border-slate-border bg-[#0B253B] ${isNativeApk ? 'aspect-[3/4] sm:aspect-video' : 'aspect-[4/3] sm:aspect-video'}`}>
             {!isNativeApk && (
               <iframe
                 aria-hidden={sequenceStage !== 'model'}
@@ -147,31 +189,38 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
                   src={displayedImage.src}
                   alt={displayedImage.title}
                   className="absolute inset-0 z-10 h-full w-full object-contain"
+                  style={{ transform: `scale(${imageScale})`, transition: 'transform 180ms ease-out' }}
                 />
                 {isNativeApk ? (
-                  <div
-                    role="group"
-                    aria-label="Seleccionar imagen del reactor PWR"
-                    className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-center gap-1 overflow-x-auto border-t border-white/10 bg-slate-950/80 p-2 backdrop-blur-md"
-                  >
-                    {PWR_IMAGES.map((image, index) => (
-                      <button
-                        key={image.file}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        aria-label={`Mostrar imagen ${image.number}: ${image.title}`}
-                        aria-pressed={selectedImageIndex === index}
-                        title={image.title}
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono-tech text-xs font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-techno ${
-                          selectedImageIndex === index
-                            ? 'border-techno bg-techno text-white'
-                            : 'border-white/20 bg-slate-900 text-slate-200 hover:border-techno hover:text-white'
-                        }`}
-                      >
-                        {String(image.number).padStart(2, '0')}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="absolute right-3 top-3 z-30">{renderImageZoomControls(false)}</div>
+                    <div
+                      role="group"
+                      aria-label="Seleccionar imagen del reactor PWR"
+                      className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-center gap-1 overflow-x-auto border-t border-white/10 bg-slate-950/80 p-2 backdrop-blur-md"
+                    >
+                      {PWR_IMAGES.map((image, index) => (
+                        <button
+                          key={image.file}
+                          type="button"
+                          onClick={() => {
+                            setSelectedImageIndex(index);
+                            setImageScale(1);
+                          }}
+                          aria-label={`Mostrar imagen ${image.number}: ${image.title}`}
+                          aria-pressed={selectedImageIndex === index}
+                          title={image.title}
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono-tech text-xs font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-techno ${
+                            selectedImageIndex === index
+                              ? 'border-techno bg-techno text-white'
+                              : 'border-white/20 bg-slate-900 text-slate-200 hover:border-techno hover:text-white'
+                          }`}
+                        >
+                          {String(image.number).padStart(2, '0')}
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <button
                     type="button"
@@ -210,6 +259,27 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
           )}
         </Panel>
       </div>
+
+      {isNativeApk && imageExpanded && sequenceStage === 'image' && createPortal(
+        <div className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col bg-slate-950 p-3 text-white">
+          <div className="mb-2 flex min-h-12 items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="hud-label block text-amber-300">VISTA AMPLIADA PWR</span>
+              <p className="truncate font-display text-sm font-semibold text-white">{displayedImage.title}</p>
+            </div>
+            {renderImageZoomControls(true)}
+          </div>
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-white/10 bg-black">
+            <img
+              src={displayedImage.src}
+              alt={displayedImage.title}
+              className="absolute inset-0 m-auto max-h-full max-w-full object-contain"
+              style={{ transform: `scale(${imageScale})`, transition: 'transform 180ms ease-out' }}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
