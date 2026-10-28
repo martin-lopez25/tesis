@@ -1,11 +1,11 @@
 // NuclearLab Service Worker - PWA Offline Caching
-const CACHE_NAME = 'nuclearlab-v2';
+const CACHE_NAME = 'nuclearlab-v3';
 const APP_BASE = self.registration.scope;
 const ASSETS_TO_CACHE = [
   APP_BASE,
   new URL('index.html', APP_BASE).href,
   new URL('manifest.webmanifest', APP_BASE).href,
-  new URL('favicon.svg', APP_BASE).href,
+  new URL('atom-icon.svg', APP_BASE).href,
   new URL('icons.svg', APP_BASE).href,
 ];
 
