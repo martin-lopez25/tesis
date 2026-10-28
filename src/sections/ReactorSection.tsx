@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type TouchEvent as ReactTouchEvent } from 'react';
 import { createPortal } from 'react-dom';
 import pwrSimulationVideo from '../../Simulador de Reactor Nuclear PWR/gemini_generated_video_3ecf3229.mp4';
 import {
@@ -45,6 +45,22 @@ const PWR_IMAGES = PWR_IMAGE_FILES.map((image, index) => {
   return { ...image, number: index + 1, src: asset?.src ?? '' };
 });
 
+type ImageGesture = {
+  mode: 'none' | 'pinch' | 'pan';
+  startDistance: number;
+  startScale: number;
+  startX: number;
+  startY: number;
+  startOffsetX: number;
+  startOffsetY: number;
+};
+
+type TouchPoint = { clientX: number; clientY: number };
+
+function touchDistance(first: TouchPoint, second: TouchPoint) {
+  return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
+}
+
 interface ReactorSectionProps {
   isNativeApk: boolean;
 }
@@ -54,16 +70,96 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
   const [videoMuted, setVideoMuted] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [imageScale, setImageScale] = useState(1);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   const [imageExpanded, setImageExpanded] = useState(false);
+  const imageGestureRef = useRef<ImageGesture>({
+    mode: 'none',
+    startDistance: 0,
+    startScale: 1,
+    startX: 0,
+    startY: 0,
+    startOffsetX: 0,
+    startOffsetY: 0,
+  });
   const firstPwrImage = PWR_IMAGES[0];
   const selectedImage = PWR_IMAGES[selectedImageIndex];
   const displayedImage = isNativeApk ? selectedImage : firstPwrImage;
+
+  const beginPan = (touch: TouchPoint) => {
+    imageGestureRef.current = {
+      ...imageGestureRef.current,
+      mode: 'pan',
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startOffsetX: imageOffset.x,
+      startOffsetY: imageOffset.y,
+    };
+  };
+
+  const handleImageTouchStart = (event: ReactTouchEvent<HTMLImageElement>) => {
+    if (event.touches.length >= 2) {
+      imageGestureRef.current = {
+        ...imageGestureRef.current,
+        mode: 'pinch',
+        startDistance: touchDistance(event.touches[0], event.touches[1]),
+        startScale: imageScale,
+      };
+    } else if (imageScale > 1) {
+      beginPan(event.touches[0]);
+    }
+  };
+
+  const handleImageTouchMove = (event: ReactTouchEvent<HTMLImageElement>) => {
+    const gesture = imageGestureRef.current;
+    if (gesture.mode === 'pinch' && event.touches.length >= 2) {
+      event.preventDefault();
+      const nextScale = Math.min(3, Math.max(1, gesture.startScale * touchDistance(event.touches[0], event.touches[1]) / gesture.startDistance));
+      setImageScale(nextScale);
+      if (nextScale === 1) setImageOffset({ x: 0, y: 0 });
+      return;
+    }
+
+    if (gesture.mode === 'pan' && event.touches.length === 1) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const maxX = bounds.width * (imageScale - 1) / 2;
+      const maxY = bounds.height * (imageScale - 1) / 2;
+      setImageOffset({
+        x: Math.max(-maxX, Math.min(maxX, gesture.startOffsetX + touch.clientX - gesture.startX)),
+        y: Math.max(-maxY, Math.min(maxY, gesture.startOffsetY + touch.clientY - gesture.startY)),
+      });
+    }
+  };
+
+  const handleImageTouchEnd = (event: ReactTouchEvent<HTMLImageElement>) => {
+    if (event.touches.length === 1 && imageScale > 1) {
+      beginPan(event.touches[0]);
+    } else if (event.touches.length === 0) {
+      imageGestureRef.current.mode = 'none';
+    }
+  };
+
+  const zoomBy = (amount: number) => {
+    setImageScale((scale) => {
+      const nextScale = Math.max(1, Math.min(3, Number((scale + amount).toFixed(2))));
+      if (nextScale === 1) setImageOffset({ x: 0, y: 0 });
+      return nextScale;
+    });
+  };
+
+  const imageTransform = `translate3d(${imageOffset.x}px, ${imageOffset.y}px, 0) scale(${imageScale})`;
+  const imageTouchStyle = {
+    transform: imageTransform,
+    transition: imageGestureRef.current.mode === 'none' ? 'transform 180ms ease-out' : 'none',
+    touchAction: 'none' as const,
+  };
 
   const renderImageZoomControls = (expanded: boolean) => (
     <div role="group" aria-label="Controles de zoom de la imagen" className="flex items-center gap-1 rounded-lg border border-white/20 bg-slate-950/85 p-1 text-white shadow-lg backdrop-blur-md">
       <button
         type="button"
-        onClick={() => setImageScale((scale) => Math.max(1, Number((scale - 0.25).toFixed(2))))}
+        onClick={() => zoomBy(-0.25)}
         disabled={imageScale <= 1}
         aria-label="Alejar imagen"
         title="Alejar imagen"
@@ -74,7 +170,7 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
       <span className="min-w-10 text-center font-mono-tech text-[11px]">{Math.round(imageScale * 100)}%</span>
       <button
         type="button"
-        onClick={() => setImageScale((scale) => Math.min(3, Number((scale + 0.25).toFixed(2))))}
+        onClick={() => zoomBy(0.25)}
         disabled={imageScale >= 3}
         aria-label="Ampliar imagen"
         title="Ampliar imagen"
@@ -189,7 +285,11 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
                   src={displayedImage.src}
                   alt={displayedImage.title}
                   className="absolute inset-0 z-10 h-full w-full object-contain"
-                  style={{ transform: `scale(${imageScale})`, transition: 'transform 180ms ease-out' }}
+                  style={imageTouchStyle}
+                  onTouchStart={isNativeApk ? handleImageTouchStart : undefined}
+                  onTouchMove={isNativeApk ? handleImageTouchMove : undefined}
+                  onTouchEnd={isNativeApk ? handleImageTouchEnd : undefined}
+                  onTouchCancel={isNativeApk ? handleImageTouchEnd : undefined}
                 />
                 {isNativeApk ? (
                   <>
@@ -197,7 +297,7 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
                     <div
                       role="group"
                       aria-label="Seleccionar imagen del reactor PWR"
-                      className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-center gap-1 overflow-x-auto border-t border-white/10 bg-slate-950/80 p-2 backdrop-blur-md"
+                      className="absolute inset-x-0 bottom-0 z-30 flex snap-x snap-mandatory items-stretch gap-2 overflow-x-auto border-t border-white/10 bg-slate-950/85 p-2 backdrop-blur-md"
                     >
                       {PWR_IMAGES.map((image, index) => (
                         <button
@@ -206,17 +306,19 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
                           onClick={() => {
                             setSelectedImageIndex(index);
                             setImageScale(1);
+                            setImageOffset({ x: 0, y: 0 });
                           }}
-                          aria-label={`Mostrar imagen ${image.number}: ${image.title}`}
+                          aria-label={`Mostrar imagen: ${image.title}`}
                           aria-pressed={selectedImageIndex === index}
                           title={image.title}
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-mono-tech text-xs font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-techno ${
+                          className={`w-[92px] shrink-0 snap-start overflow-hidden rounded-md border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-techno ${
                             selectedImageIndex === index
                               ? 'border-techno bg-techno text-white'
                               : 'border-white/20 bg-slate-900 text-slate-200 hover:border-techno hover:text-white'
                           }`}
                         >
-                          {String(image.number).padStart(2, '0')}
+                          <img src={image.src} alt="" className="aspect-video w-full object-cover" />
+                          <span className="block truncate px-1.5 py-1 font-mono-tech text-[9px]">{image.title}</span>
                         </button>
                       ))}
                     </div>
@@ -274,7 +376,11 @@ export default function ReactorSection({ isNativeApk }: ReactorSectionProps) {
               src={displayedImage.src}
               alt={displayedImage.title}
               className="absolute inset-0 m-auto max-h-full max-w-full object-contain"
-              style={{ transform: `scale(${imageScale})`, transition: 'transform 180ms ease-out' }}
+              style={imageTouchStyle}
+              onTouchStart={handleImageTouchStart}
+              onTouchMove={handleImageTouchMove}
+              onTouchEnd={handleImageTouchEnd}
+              onTouchCancel={handleImageTouchEnd}
             />
           </div>
         </div>,
