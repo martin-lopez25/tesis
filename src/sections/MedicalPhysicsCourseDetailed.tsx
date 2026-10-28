@@ -1,8 +1,12 @@
-import { MEDICAL_PHYSICS_MODULES, type MedicalCourseModuleId } from './medicalPhysicsCourseData';
+import {
+  MEDICAL_PHYSICS_MODULES,
+  RADIOPHARMACEUTICAL_MODULE,
+  type MedicalCourseModuleId,
+} from './medicalPhysicsCourseData';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
-export { MEDICAL_PHYSICS_MODULES } from './medicalPhysicsCourseData';
+export { MEDICAL_PHYSICS_MODULES, RADIOPHARMACEUTICAL_MODULE } from './medicalPhysicsCourseData';
 export type { MedicalCourseModuleId } from './medicalPhysicsCourseData';
 
 type MedicalPhysicsCourseProps = {
@@ -45,6 +49,14 @@ function renderContentBlock(block: string, index: number) {
     );
   }
 
+  if (firstLine.startsWith('~~~')) {
+    return (
+      <pre key={index} className="overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono-tech text-xs leading-relaxed text-emerald-100">
+        <code>{lines.slice(1).filter((line) => !line.startsWith('~~~')).join('\n')}</code>
+      </pre>
+    );
+  }
+
   if (lines.every((line) => line.startsWith('- '))) {
     return (
       <ul key={index} className="space-y-2 pl-1">
@@ -55,6 +67,40 @@ function renderContentBlock(block: string, index: number) {
           </li>
         ))}
       </ul>
+    );
+  }
+
+  if (lines.every((line) => /^\d+\.\s/.test(line))) {
+    return (
+      <ol key={index} className="list-decimal space-y-2 pl-6 font-body text-sm leading-relaxed text-graphite marker:font-semibold marker:text-techno">
+        {lines.map((line) => (
+          <li key={line}>{renderInlineMath(line.replace(/^\d+\.\s/, ''))}</li>
+        ))}
+      </ol>
+    );
+  }
+
+  if (lines.every((line) => line.trim().startsWith('|'))) {
+    const rows = lines
+      .filter((line) => !/^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/.test(line.trim()))
+      .map((line) => line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim()));
+    const [header, ...body] = rows;
+
+    return (
+      <div key={index} className="overflow-x-auto rounded-lg border border-slate-border">
+        <table className="w-full min-w-[560px] border-collapse text-left font-body text-xs text-graphite">
+          <thead className="bg-slate-50 text-nuclear-deep">
+            <tr>{header.map((cell) => <th key={cell} className="border-b border-slate-border px-3 py-2.5 font-semibold">{renderInlineMath(cell)}</th>)}</tr>
+          </thead>
+          <tbody>
+            {body.map((row, rowIndex) => (
+              <tr key={rowIndex} className="align-top even:bg-slate-50/60">
+                {row.map((cell, cellIndex) => <td key={cellIndex} className="border-b border-slate-border px-3 py-2.5 leading-relaxed">{renderInlineMath(cell)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   }
 
@@ -85,7 +131,9 @@ function renderContentBlock(block: string, index: number) {
 }
 
 export default function MedicalPhysicsCourseDetailed({ moduleId }: MedicalPhysicsCourseProps) {
-  const module = MEDICAL_PHYSICS_MODULES.find((item) => item.id === moduleId) ?? MEDICAL_PHYSICS_MODULES[0];
+  const module = moduleId === 'radiopharmaceutical'
+    ? RADIOPHARMACEUTICAL_MODULE
+    : MEDICAL_PHYSICS_MODULES.find((item) => item.id === moduleId) ?? MEDICAL_PHYSICS_MODULES[0];
   const contentBlocks = module.content.split('\n\n');
 
   return (

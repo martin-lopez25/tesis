@@ -1,4 +1,4 @@
-export type MedicalCourseModuleId = 'module-1' | 'module-2' | 'module-3' | 'module-4' | 'module-5' | 'module-6';
+export type MedicalCourseModuleId = 'module-1' | 'module-2' | 'module-3' | 'module-4' | 'module-5' | 'module-6' | 'radiopharmaceutical';
 
 export type MedicalCourseModule = {
   id: MedicalCourseModuleId;
@@ -403,3 +403,159 @@ La terapia con radiofármacos no sellados dirige la radiación al nivel celular.
 Este programa de seis módulos integra las cuatro fuentes para cubrir física teórica, formulaciones matemáticas y práctica metrológica estandarizada por el OIEA.`
   }
 ];
+
+export const RADIOPHARMACEUTICAL_MODULE: MedicalCourseModule = {
+  id: 'radiopharmaceutical',
+  roman: 'RF',
+  shortTitle: 'Radiofármaco',
+  title: 'Radiofármacos y Física en la Radiofarmacia',
+  summary: 'Producción, preparación, control de calidad, dispensación, dosimetría y protección radiológica de radiofármacos.',
+  sources: 'IAEA, Nuclear Medicine Physics: A Handbook for Teachers and Students · Referencias complementarias: Diagnostic Radiology Physics y Radiation Oncology Physics',
+  content: String.raw`## 1. Definición y Principios Fundamentales del Radiofármaco
+
+Un **radiofármaco** es un compuesto químico que contiene uno o más átomos radiactivos (radionúclidos) en su estructura y que se administra a seres humanos con fines de diagnóstico, estadificación de enfermedades o terapia biológica dirigida.
+
+A diferencia de los agentes de contraste utilizados en radiodiagnóstico, como el yodo o el bario, el radiofármaco se administra en **cantidades de traza**, con molaridad del orden de $10^{-9}$ a $10^{-6}\,\mathrm{M}$, por lo que no produce efectos farmacológicos ni fisiológicos observables en el paciente.
+
+### Estructura de un Radiofármaco
+
+Un radiofármaco consta convencionalmente de dos componentes clave:
+
+1. **Módulo vector / Ligando:** molécula orgánica, péptido, anticuerpo monoclonal o célula sanguínea que posee alta afinidad por un blanco biológico o ruta metabólica específica en el organismo.
+2. **Radionúclido / Emisor:** isótopo radiactivo acoplado a la molécula mediante enlaces covalentes o quelación, encargado de emitir radiación detectable desde el exterior para diagnóstico o de depositar energía a corta distancia para terapia.
+
+## 2. Física de la Producción de Radionúclidos
+
+La preparación de radiofármacos requiere radionúclidos inestables con vidas medias ($T_{1/2}$) convenientes y tipos de decaimiento óptimos. Se emplean tres mecanismos principales de producción.
+
+### 2.1. Producción en Reactor Nuclear (Captura Neutrónica y Fisión)
+
+En los reactores nucleares de investigación se utiliza el alto flujo de neutrones térmicos, aproximadamente $10^{14}\,\mathrm{neutrones}\cdot\mathrm{cm}^{-2}\cdot\mathrm{s}^{-1}$, para bombardear blancos estables:
+
+- **Reacciones de captura neutrónica $(n,\gamma)$:** el núcleo blanco absorbe un neutrón térmico emitiendo radiación gamma de desintegración. Un ejemplo es la producción de cobalto para teleterapia. Debido a que el radionúclido producido es del mismo elemento químico que el blanco, no puede separarse químicamente, lo que resulta en una **baja actividad específica** ($a=A/m$).
+
+= {}^{59}\mathrm{Co} + n \longrightarrow {}^{60}\mathrm{Co} + \gamma \qquad \text{o bien}\qquad {}^{59}\mathrm{Co}(n,\gamma){}^{60}\mathrm{Co}
+
+- **Reacciones $(n,p)$ y fisión nuclear $(n,f)$:** permiten obtener elementos distintos al blanco, facilitando la separación química y la obtención de muestras libres de portador (*carrier-free*) con **alta actividad específica**. Por ejemplo, la fisión de Uranio-235 genera Molibdeno-99.
+
+= {}^{235}\mathrm{U} + n \longrightarrow {}^{236}\mathrm{U} \longrightarrow {}^{99}\mathrm{Mo} + {}^{134}\mathrm{Sn} + 3n
+
+### 2.2. Producción en Ciclotrón y Aceleradores de Partículas
+
+Los ciclotrones aceleran partículas cargadas (protones $p$, deuterones $d$ o partículas $\alpha$) que siguen trayectorias espirales bajo la acción de un campo magnético uniforme y un campo eléctrico de radiofrecuencia.
+
+- Los ciclotrones biomédicos dedicados (10–20 MeV) aceleran comúnmente **iones negativos** ($\mathrm{H}^{-}$), que pasan por una lámina de *stripping* de carbono que elimina los electrones orbitales y extrae un haz de protones con eficiencia cercana al 100%.
+- Producen radionúclidos deficientes en neutrones que decaen por **emisión de positrones ($\beta^+$) o captura electrónica (EC)**, esenciales para PET y SPECT.
+- Ejemplos clave para PET:
+  - Fluoruro para marcado de fluorodesoxiglucosa (¹⁸F-FDG): $T_{1/2} = 109.8\,\mathrm{min}$.
+
+= {}^{18}\mathrm{O}(p,n){}^{18}\mathrm{F}
+
+Otros emisores PET de vida media corta: ¹¹C (20.5 min), ¹³N (9.97 min) y ¹⁵O (122.2 s).
+
+### 2.3. Generadores de Radionúclidos y Equilibrio Radiactivo
+
+Un generador es un sistema donde un radionúclido padre de vida media relativamente larga decae en un radionúclido hijo de vida media más corta, el cual puede separarse físicamente mediante elución cromatográfica.
+
+#### Generador de Molibdeno-99 / Tecnecio-99m
+
+Es el pilar de la medicina nuclear diagnóstica. El ⁹⁹Mo ($T_{1/2}=2.7\,\mathrm{días}$) está adsorbido en una columna cromatográfica de alúmina ($\mathrm{Al_2O_3}$). Al pasar solución salina fisiológica ($\mathrm{NaCl}$ al 0.9%), el ⁹⁹ᵐTc ($T_{1/2}=6\,\mathrm{h}$) se eluye solubilizado como pertecnetato de sodio (Na⁹⁹ᵐTcO₄).
+
+La relación de actividades en un régimen de **equilibrio transitorio** ($\lambda_D>\lambda_P$) viene dada por:
+
+= \frac{A_D(t)}{A_P(t)} = \frac{\lambda_D}{\lambda_D-\lambda_P}\left[1-e^{-(\lambda_D-\lambda_P)t}\right]
+
+$A_D(t)$ es la actividad del hijo (⁹⁹ᵐTc), $A_P(t)$ es la actividad del padre (⁹⁹Mo), y $\lambda_D,\lambda_P$ son sus respectivas constantes de decaimiento. En el tiempo de máxima acumulación del hijo ($t_{\mathrm{máx}}$):
+
+= t_{\mathrm{máx}} = \frac{\ln(\lambda_D/\lambda_P)}{\lambda_D-\lambda_P}
+
+#### Otros Generadores de Interés Clínico
+
+- **Generador ⁶⁸Ge/⁶⁸Ga:** padre de vida muy larga ($T_{1/2}=271\,\mathrm{días}$) que produce el emisor de positrones ⁶⁸Ga ($T_{1/2}=68\,\mathrm{min}$), utilizado para marcar péptidos como ⁶⁸Ga-DOTATOC en diagnóstico PET de tumores neuroendocrinos.
+- **Generador ⁸²Sr/⁸²Rb:** para PET cardiaco ($T_{1/2}(⁸²Rb)=75\,\mathrm{s}$).
+- **Generador ⁹⁰Sr/⁹⁰Y:** padre de vida media de 28.5 años que produce el emisor $\beta^-$ puro ⁹⁰Y ($T_{1/2}=2.3\,\mathrm{días}$) para radioterapia dirigida.
+
+## 3. Instrumentación y Control de Calidad en la Radiofarmacia: El Activímetro
+
+El **activímetro** o calibrador de dosis es el instrumento primario en la radiofarmacia para medir la actividad del radiofármaco en viales o jeringas antes de su administración.
+
+~~~text
+  +-----------------------------------------------------------+
+  |              CÁMARA DE IONIZACIÓN REENTRANTE             |
+  |                                                           |
+  |   |======|   <-- Soporte Muestra (Vial / Jeringa)         |
+  |   |  ||  |                                                |
+  |   |  ||  |   <-- Revestimiento / Lucite (Perspex)         |
+  |   |  ||  |                                                |
+  |   +------+                                                |
+  |   | Gas  |   <-- Argón a Alta Presión (10 - 20 atm)       |
+  |   | Argón|                                                |
+  |   +------+                                                |
+  |   Electrodos Cilíndricos (+ / -) --> Electrómetro Digital|
+  +-----------------------------------------------------------+
+~~~
+
+### 3.1. Principio de Funcionamiento y Construcción
+
+- Es una **cámara de ionización cilíndrica de cavidad reentrante** (*well-type*), que proporciona una eficiencia geométrica cercana al 100% ($4\pi$ estereorradianes).
+- Está rellena de gas argón a alta presión (típicamente 10 a 20 atm) para maximizar la probabilidad de interacción de los fotones gamma.
+- Posee un tubo interno de Lucite/Perspex que previene la contaminación accidental del volumen activo de la cámara.
+- El electrómetro mide la corriente de ionización producida (del orden de pA a nA) y aplica factores de calibración digitales prefijados para cada radionúclido específico.
+
+### 3.2. Medición de Emisores $\beta$ Puros y Efecto de Frenado
+
+Para medir la actividad de emisores $\beta^-$ puros usados en terapia (⁹⁰Y, ³²P, ⁸⁹Sr), el activímetro detecta la radiación de frenado (*bremsstrahlung*) producida por la desaceleración de los electrones en las paredes del contenedor.
+
+- Dado que la fluencia de radiación de frenado es proporcional al cuadrado del número atómico ($Z^2$) del material absorbente, la medición es altamente sensible a la geometría, espesor y material del contenedor.
+- Se requiere utilizar viales de plástico o blindajes de **acrílico/Perspex** (material de bajo $Z$) para minimizar el *bremsstrahlung* y calibrar el instrumento de manera específica para cada geometría de jeringa o vial clínico.
+
+### 3.3. Controles de Calidad Obligatorios del Activímetro
+
+1. **Exactitud (*Accuracy*):** comparación periódica con fuentes patrones trazables a laboratorios de metrología (p. ej., ⁵⁷Co, ¹³⁷Cs, ⁶⁰Co). La desviación debe ser menor al $\pm10\%$.
+2. **Constancia (*Constancy*):** medición diaria con una fuente de vida media larga (p. ej., ¹³⁷Cs) en todas las escalas y ajustes de radionúclidos.
+3. **Linealidad (*Linearity*):** verificación de la respuesta en todo el intervalo clínico de actividades (desde actividades de elución de generador hasta dosis de paciente). Puede evaluarse por el método de decaimiento de un eluido fresco de ⁹⁹ᵐTc o mediante el método de blindajes concéntricos de plomo de atenuación conocida.
+4. **Respuesta Geométrica:** evaluación de variaciones en la lectura al medir un mismo volumen en contenedores de diferentes tamaños (jeringas de 1, 3 y 5 mL o viales de vidrio).
+
+## 4. Pureza y Dispensación Clínica de Radiofármacos
+
+### 4.1. Criterios de Control de Calidad del Producto
+
+Antes de administrar un radiofármaco, este debe cumplir con estrictas especificaciones farmacopeicas:
+
+- **Pureza Radionuclídica:** fracción de la actividad total que corresponde al radionúclido deseado. La presencia de contaminantes, como ⁹⁹Mo en el eluido de ⁹⁹ᵐTc, debe ser inferior al límite normativo para evitar dosis innecesarias al paciente.
+- **Pureza Radioquímica:** fracción del radionúclido que se encuentra en la forma química correcta (porcentaje de ⁹⁹ᵐTc unido al ligando frente al ⁹⁹ᵐTc libre o pertecnetato). Se evalúa comúnmente mediante cromatografía en capa fina.
+- **Pureza Química y Biológica:** ausencia de reactivos químicos tóxicos, esterilidad y ausencia de pirógenos/endotoxinas.
+
+### 4.2. Ajuste de Dosificación en Pacientes Pediátricos y Adultos
+
+La actividad administrada a adultos y niños debe ajustarse de acuerdo con los Niveles de Referencia de Diagnóstico (DRL / *Guidance Levels*).
+
+Para el cálculo de dosis pediátricas a partir de dosis de adulto, se aplican tarjetas de dosificación estandarizadas (p. ej., EANM) basadas en modelos de escalado por peso o superficie corporal utilizando un **factor de potencia $a$** específico para cada radiofármaco:
+
+= \mathrm{Factor\ de\ Escala} = \left(\frac{W}{70}\right)^a
+
+$W$ es el peso del paciente pediátrico en kg y $a$ es el exponente característico del radiofármaco (p. ej., $a=-0.782$ para ¹⁸F-FDG y $a=-0.871$ para ⁹⁹ᵐTc-Sestamibi).
+
+## 5. Radiofármacos Terapéuticos y Radiobiología Dirigida
+
+En la **terapia con radionúclidos**, se buscan emisores de partículas con alta Transferencia Lineal de Energía (LET), como partículas $\beta^-$ o alfa ($\alpha$), que depositen dosis elevadas a corta distancia en células tumorales.
+
+### 5.1. Ejemplos de Radiofármacos de Uso Terapéutico
+
+- **Yodo-131 (¹³¹I):** trata el carcinoma diferenciado de tiroides e hipertiroidismo. Emite partículas $\beta^-$ ($E_{\mathrm{máx}}=0.61\,\mathrm{MeV}$), responsables del 90% de la dosis absorbida en el tejido tiroideo, y fotones gamma de 364 keV útiles para imagen.
+- **Lutecio-177 (¹⁷⁷Lu):** emisor $\beta^-$ suave ($E_{\mathrm{máx}}=0.49\,\mathrm{MeV}$) y fotones gamma de bajo rendimiento (113 y 208 keV). Se utiliza en péptidos marcados (¹⁷⁷Lu-DOTATATE) para tumores neuroendocrinos y en ¹⁷⁷Lu-PSMA para cáncer de próstata metastásico.
+- **Itrio-90 (⁹⁰Y):** emisor $\beta^-$ puro de alta energía ($E_{\mathrm{máx}}=2.27\,\mathrm{MeV}$, alcance en agua de 11 mm). Se emplea en radioinmunoterapia (anticuerpos monoclonales como ⁹⁰Y-ibritumomab tiuxetan) y radioembolización hepática con microesferas.
+- **Radio-223 (²²³Ra):** emisor alfa que imita al calcio y se fija en metástasis óseas. Las partículas alfa tienen alta LET y un alcance ultracorto ($<100\,\mu\mathrm{m}$), lo que minimiza la mielotoxicidad en la médula ósea adyacente.
+
+## 6. Protección Radiológica y Blindajes en la Radiofarmacia
+
+El diseño de la radiofarmacia y el manejo de fuentes no selladas exige estrategias específicas de blindaje según el tipo de radiación emitido:
+
+| Tipo de emisor | Material de blindaje recomendado | Razón física |
+|---|---|---|
+| Emisores gamma de baja energía (⁹⁹ᵐTc) | Plomo / tungsteno (2 a 5 mm) | Alto $Z$ para optimizar absorción fotoeléctrica. |
+| Emisores $\beta^-$ puros (⁹⁰Y, ³²P) | Acrílico / Perspex / aluminio | Bajo $Z$ para absorber electrones sin generar bremsstrahlung. |
+| Emisores de positrones / PET (¹⁸F) | Plomo / tungsteno denso (30 a 50 mm) | Blindaje para los fotones de aniquilación de 511 keV. |
+
+Para el manejo seguro de radiofármacos PET y terapias de alta actividad, se emplean **cabinas de flujo laminar con presión negativa** y **mamparas plomadas con visores de vidrio plomado**, garantizando al mismo tiempo la contención radiológica y la esterilidad del producto farmacéutico.`
+};

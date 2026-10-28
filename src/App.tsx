@@ -524,6 +524,18 @@ export default function App() {
                   </button>
                 ))}
                 <button
+                  id="tab-radiopharmaceutical"
+                  type="button"
+                  role="tab"
+                  aria-selected={medicalTab === 'radiopharmaceutical'}
+                  aria-controls="medical-module-panel"
+                  onClick={() => setMedicalTab('radiopharmaceutical')}
+                  className={`tab-btn ${medicalTab === 'radiopharmaceutical' ? 'tab-btn-active' : 'tab-btn-inactive'}`}
+                >
+                  <span className="font-mono-tech text-[10px]">RF</span>
+                  <span>Radiofármaco</span>
+                </button>
+                <button
                   id="tab-clinical"
                   type="button"
                   role="tab"
